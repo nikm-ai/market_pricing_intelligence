@@ -88,9 +88,11 @@ st.markdown("""
   /* Figure captions */
   .fig-caption {
     font-family: 'EB Garamond', Georgia, serif;
-    font-size: 13.5px; line-height: 1.7; color: var(--text-color);
+    font-size: 13.5px; line-height: 1.75; color: var(--text-color);
     opacity: 0.8; margin-top: 0.1rem; margin-bottom: 1.25rem;
     max-width: 100%; font-style: italic;
+    word-spacing: 0.02em; letter-spacing: normal;
+    white-space: normal; word-break: normal; overflow-wrap: normal;
   }
   .fig-caption b { font-style: normal; font-weight: 600; opacity: 1; color: var(--text-color); }
 
@@ -767,15 +769,21 @@ with tab_model:
     with fi_col:
         imp    = ma["imp_df"]
         colors = ["#b8cfe0" if i < len(imp)-1 else "#1a4f82" for i in range(len(imp))]
+        # Pre-format labels as plain strings to prevent any renderer splitting decimals
+        imp_labels = [f"{v*100:.1f}%" for v in imp["Importance"]]
         fig_imp = go.Figure(go.Bar(
             x=imp["Importance"], y=imp["Feature"], orientation="h",
             marker_color=colors,
-            text=[f"{v*100:.1f}%" for v in imp["Importance"]],
-            textposition="outside", textfont=dict(size=11, color="#333333"),
+            text=imp_labels,
+            textposition="outside",
+            textfont=dict(size=11, color="#333333", family="Inter, Arial, sans-serif"),
+            cliponaxis=False,
         ))
-        fig_imp.update_layout(**BASE, height=300,
+        fig_imp.update_layout(**BASE, height=320,
+            margin=dict(l=8, r=80, t=16, b=40),
             xaxis=dict(**ax("Relative importance", grid=False),
-                       tickformat=".0%", range=[0, imp["Importance"].max()*1.28]),
+                       tickformat=".0%",
+                       range=[0, imp["Importance"].max() * 1.35]),
             yaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
                        linecolor="#dddddd", linewidth=1, showline=True),
             showlegend=False,
@@ -808,18 +816,19 @@ with tab_model:
         ))
         fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash",
                          line_color="#1a4f82", line_width=1.2)
-        # Annotation as separate trace to control position precisely
+        # Place mean label above Fold 1 (left side) — never collides with any bar
         fig_cv.add_trace(go.Scatter(
-            x=["Fold 5"], y=[ma["r2_mean"] + 0.0006],
+            x=["Fold 1"],
+            y=[ma["r2_mean"] + 0.0007],
             mode="text",
-            text=[f"Mean = {ma['r2_mean']:.4f}"],
-            textposition="top left",
-            textfont=dict(size=10, color="#1a4f82"),
+            text=[f"Mean\u202f=\u202f{ma['r2_mean']:.4f}"],
+            textposition="top right",
+            textfont=dict(size=10, color="#1a4f82", family="Inter, Arial, sans-serif"),
             showlegend=False,
         ))
         r2_vals = cv_df["R\u00b2"].values
         r2_lo   = min(r2_vals) - 0.006
-        r2_hi   = max(r2_vals) + 0.008
+        r2_hi   = max(r2_vals) + 0.010
         fig_cv.update_layout(**BASE, height=300,
             yaxis=dict(**ax("R\u00b2"), range=[r2_lo, r2_hi]),
             xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
@@ -996,7 +1005,7 @@ with tab_model:
           property type, and demand index that are inaccessible to linear models, yielding
           a {(ma['r2_mean']-ma['baseline_r2_mean'])*100:.1f} percentage-point improvement
           in cross-validated R\u00b2 over the Ridge baseline.
-          Residuals are well-centered (mean = ${ma['residuals'].mean():.0f}) and
+          Residuals are well-centered (mean\u202f=\u202f${abs(ma['residuals'].mean()):.0f}) and
           homoscedastic, indicating an unbiased, well-calibrated estimator across the
           observed rent distribution.
         </div>""", unsafe_allow_html=True)
