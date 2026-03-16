@@ -779,8 +779,9 @@ with tab_model:
             textfont=dict(size=11, color="#333333", family="Inter, Arial, sans-serif"),
             cliponaxis=False,
         ))
-        fig_imp.update_layout(**BASE, height=320,
-            margin=dict(l=8, r=80, t=16, b=40),
+        fig_imp.update_layout(
+            **{**BASE, "margin": dict(l=8, r=80, t=16, b=40)},
+            height=320,
             xaxis=dict(**ax("Relative importance", grid=False),
                        tickformat=".0%",
                        range=[0, imp["Importance"].max() * 1.35]),
