@@ -152,13 +152,67 @@ st.markdown("""
     line-height: 1.6;
   }
 
-  /* Sidebar */
-  [data-testid="stSidebar"] { background: rgba(128,128,128,0.02); }
-  [data-testid="stSidebar"] .stMarkdown p {
-    font-family: 'Inter', sans-serif; font-size: 13px;
+  /* ── Sidebar ── */
+  [data-testid="stSidebar"] {
+    background: rgba(128,128,128,0.02);
+    border-right: 1px solid rgba(128,128,128,0.12);
   }
+
+  /* Sidebar section labels (bold markdown) */
+  [data-testid="stSidebar"] strong {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; opacity: 0.45; color: var(--text-color);
+  }
+
+  /* Sidebar all text */
+  [data-testid="stSidebar"] p,
+  [data-testid="stSidebar"] .stMarkdown p {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; color: var(--text-color); opacity: 0.8;
+  }
+
+  /* Sidebar widget labels */
+  [data-testid="stSidebar"] label,
+  [data-testid="stSidebar"] .stSelectbox label,
+  [data-testid="stSidebar"] .stMultiSelect label,
+  [data-testid="stSidebar"] .stSlider label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 11px !important; font-weight: 500 !important;
+    letter-spacing: 0.02em; color: var(--text-color) !important;
+    opacity: 0.7;
+  }
+
+  /* Sidebar caption text */
+  [data-testid="stSidebar"] .stCaption,
+  [data-testid="stSidebar"] small {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 12px; opacity: 0.45; color: var(--text-color);
+    line-height: 1.6;
+  }
+
+  /* Sidebar horizontal rule */
+  [data-testid="stSidebar"] hr {
+    border: none;
+    border-top: 1px solid rgba(128,128,128,0.18);
+    margin: 1rem 0;
+  }
+
+  /* Sidebar multiselect tags */
+  [data-testid="stSidebar"] [data-baseweb="tag"] {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+  }
+
+  /* Slider value label */
+  [data-testid="stSidebar"] [data-testid="stTickBar"] {
+    font-family: 'Inter', sans-serif; font-size: 11px;
+  }
+
+  /* Tab buttons */
   [data-testid="stTabs"] button {
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.01em;
+    font-family: 'Inter', sans-serif; font-size: 13px;
+    font-weight: 500; letter-spacing: 0.02em;
   }
 </style>
 """, unsafe_allow_html=True)
@@ -196,7 +250,7 @@ with st.spinner("Estimating model parameters..."):
 
 # ── Sidebar ────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("**Filter parameters**")
+    st.markdown('<p style="font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.45;margin-bottom:0.5rem;">Filter parameters</p>', unsafe_allow_html=True)
     cities     = st.multiselect("City", sorted(df_full["city"].unique()),
                                  default=sorted(df_full["city"].unique()))
     prop_types = st.multiselect("Property type", ["Studio","1BR","2BR","3BR+"],
@@ -204,16 +258,16 @@ with st.sidebar:
     segments   = st.multiselect("Market segment", ["Budget","Mid-Market","Premium"],
                                  default=["Budget","Mid-Market","Premium"])
     dem_range  = st.slider("Demand score", 0, 100, (0, 100))
-    st.markdown("---")
-    st.markdown("**Model parameters**")
+    st.markdown('<hr style="border:none;border-top:1px solid rgba(128,128,128,0.18);margin:1rem 0;">', unsafe_allow_html=True)
+    st.markdown('<p style="font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.45;margin-bottom:0.5rem;">Model parameters</p>', unsafe_allow_html=True)
     elasticity = st.slider("Demand elasticity", 0.5, 2.0, 1.0, 0.1,
                             help="Price elasticity of demand. Higher values indicate greater sensitivity of occupancy to price changes.")
     occ_target = st.slider("Target occupancy (%)", 70, 98, 88)
-    st.markdown("---")
+    st.markdown('<hr style="border:none;border-top:1px solid rgba(128,128,128,0.18);margin:1rem 0;">', unsafe_allow_html=True)
     st.caption(
-        f"Synthetic dataset. N = 2,000 listings. "
+        f"Synthetic dataset. N\u202f=\u202f2,000 listings. "
         f"Five metropolitan markets. "
-        f"Model CV R\u00b2 = {ma['r2_mean']:.3f}."
+        f"Model CV R\u00b2\u202f=\u202f{ma['r2_mean']:.3f}."
     )
 
 # ── Filter ─────────────────────────────────────────────────────────────────
@@ -716,7 +770,7 @@ with tab_model:
         fig_imp = go.Figure(go.Bar(
             x=imp["Importance"], y=imp["Feature"], orientation="h",
             marker_color=colors,
-            text=[f"{v:.1%}" for v in imp["Importance"]],
+            text=[f"{v*100:.1f}%" for v in imp["Importance"]],
             textposition="outside", textfont=dict(size=11, color="#333333"),
         ))
         fig_imp.update_layout(**BASE, height=300,
@@ -732,12 +786,12 @@ with tab_model:
           <b>Figure 5.</b> Relative feature importance from the fitted Gradient Boosting model,
           computed as the mean reduction in squared error attributable to each feature across
           all decision trees. Square footage accounts for the largest share of predictive variance
-          ({imp.iloc[-1]['Importance']:.1%}), followed by metropolitan market
-          ({imp.iloc[-2]['Importance']:.1%}).
+          ({imp.iloc[-1]['Importance']*100:.1f}%), followed by metropolitan market
+          ({imp.iloc[-2]['Importance']*100:.1f}%).
           Demand index, distance, and property type collectively account for the remainder.
           The dominance of structural characteristics (size, location) over demand signals is
           consistent with standard hedonic pricing theory.
-          Note that the low importance of the neighborhood demand index ({imp.iloc[0]['Importance']:.1%})
+          Note that the low importance of the neighborhood demand index ({imp.iloc[0]['Importance']*100:.1f}%)
           reflects a property of the synthetic data generating process, in which demand is a
           second-order price determinant. In production data, where demand signals are measured
           with greater granularity and temporal resolution, this feature would be expected to
@@ -750,15 +804,24 @@ with tab_model:
             x=cv_df["Fold"], y=cv_df["R\u00b2"],
             marker_color="#3d7ab5",
             text=[f"{v:.4f}" for v in cv_df["R\u00b2"]],
-            textposition="outside", textfont=dict(size=11, color="#333333"),
+            textposition="inside", textfont=dict(size=10, color="white"),
         ))
-        fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash", line_color="#1a4f82", line_width=1.2,
-                         annotation_text=f"Mean = {ma['r2_mean']:.4f}",
-                         annotation_position="bottom right",
-                         annotation_font=dict(size=10, color="#1a4f82"))
-        r2_lo = round(ma["r2_mean"] - 0.012, 3)
+        fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash",
+                         line_color="#1a4f82", line_width=1.2)
+        # Annotation as separate trace to control position precisely
+        fig_cv.add_trace(go.Scatter(
+            x=["Fold 5"], y=[ma["r2_mean"] + 0.0006],
+            mode="text",
+            text=[f"Mean = {ma['r2_mean']:.4f}"],
+            textposition="top left",
+            textfont=dict(size=10, color="#1a4f82"),
+            showlegend=False,
+        ))
+        r2_vals = cv_df["R\u00b2"].values
+        r2_lo   = min(r2_vals) - 0.006
+        r2_hi   = max(r2_vals) + 0.008
         fig_cv.update_layout(**BASE, height=300,
-            yaxis=dict(**ax("R\u00b2"), range=[r2_lo, ma["r2_mean"] + 0.018]),
+            yaxis=dict(**ax("R\u00b2"), range=[r2_lo, r2_hi]),
             xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
                        linecolor="#dddddd", linewidth=1, showline=True),
             showlegend=False,
