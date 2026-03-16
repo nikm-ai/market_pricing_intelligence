@@ -21,7 +21,7 @@ st.markdown("""
   /* ── Typography system ── */
   @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
 
-  .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1160px; }
+  .block-container { padding-top: 4rem; padding-bottom: 3rem; max-width: 1160px; }
 
   /* Title block */
   .paper-title {
@@ -570,6 +570,8 @@ with tab_dash:
         )
         st.plotly_chart(fig_roi, use_container_width=True)
 
+    lift_fmt = f"${proj_lift/1e6:.2f}M" if abs(proj_lift) >= 1e6 else f"${proj_lift/1e3:,.0f}K"
+    avg_fmt  = f"${avg_lift:,.0f}"
     st.markdown(f"""<div class="fig-caption">
       <b>Figure 4.</b> Projected annual revenue lift by market segment under a {adopt}% adoption
       scenario for {city_str} ({type_str}).
@@ -579,8 +581,8 @@ with tab_dash:
       primarily because overpriced units must reduce their asking rent to recover occupancy.
       Of {len(roi_df):,} listings in scope, {len(eligible):,} have a positive projected lift.
       At the specified adoption rate, {n_adopt:,} listings would reprice, generating an estimated
-      ${proj_lift/1e3:.0f}K in incremental annual revenue
-      (mean ${avg_lift:,.0f} per listing per year).
+      {lift_fmt} in incremental annual revenue
+      (mean {avg_fmt} per listing per year).
       The adoption rate parameter captures realistic implementation friction:
       property managers may face lease constraints, competitive considerations,
       or information asymmetries that delay full adoption.
@@ -752,10 +754,11 @@ with tab_model:
         ))
         fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash", line_color="#1a4f82", line_width=1.2,
                          annotation_text=f"Mean = {ma['r2_mean']:.4f}",
-                         annotation_position="top left",
+                         annotation_position="bottom right",
                          annotation_font=dict(size=10, color="#1a4f82"))
+        r2_lo = round(ma["r2_mean"] - 0.012, 3)
         fig_cv.update_layout(**BASE, height=300,
-            yaxis=dict(**ax("R\u00b2"), range=[max(0, ma["r2_mean"]-0.05), 1.0]),
+            yaxis=dict(**ax("R\u00b2"), range=[r2_lo, ma["r2_mean"] + 0.018]),
             xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
                        linecolor="#dddddd", linewidth=1, showline=True),
             showlegend=False,
