@@ -203,9 +203,10 @@ with col_left:
             y=seg_df["recommended_price"],
             name=f"{seg}<br>(recommended)",
             marker_color=seg_colors[seg],
+            marker_symbol="diamond",
             legendgroup=seg,
             boxmean=True,
-            line=dict(dash="dot"),
+            opacity=0.45,
         ))
 
     fig_box.update_layout(
