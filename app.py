@@ -134,11 +134,13 @@ st.markdown("""
     font-family: 'Inter', sans-serif;
     font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
     text-transform: uppercase; color: var(--text-color); opacity: 0.6;
-    margin-bottom: 6px;
+    margin-bottom: 8px; word-spacing: normal; white-space: normal;
   }
   .note-body {
     font-family: 'EB Garamond', Georgia, serif;
-    font-size: 14px; line-height: 1.7; color: var(--text-color); opacity: 0.85;
+    font-size: 14px; line-height: 1.75; color: var(--text-color); opacity: 0.85;
+    word-spacing: 0.02em; letter-spacing: normal; white-space: normal;
+    word-break: normal; overflow-wrap: normal;
   }
 
   /* Footer */
@@ -532,15 +534,37 @@ with tab_dash:
     if len(roi_df) > 0:
         lift_seg = roi_df.groupby("segment", observed=True)["annual_revenue_lift"].sum().reindex(SEG_ORDER)
         valid    = lift_seg.dropna()
-        fig_roi  = go.Figure(go.Bar(
-            x=valid.index, y=valid.values / 1e3,
-            marker_color=[SEG_COLORS[s] for s in valid.index],
-            text=[f"${v/1e3:.0f}K" if abs(v) < 1e6 else f"${v/1e6:.2f}M" for v in valid.values],
-            textposition="outside", textfont=dict(size=12, color="#333333"),
+
+        # Diverging color: positive = blue, negative = muted red
+        bar_colors = [SEG_COLORS[s] if valid[s] >= 0 else "#b94040" for s in valid.index]
+        bar_text   = [
+            f"+${v/1e3:.0f}K" if v >= 0 and abs(v) < 1e6
+            else f"+${v/1e6:.2f}M" if v >= 0
+            else f"-${abs(v)/1e3:.0f}K" if abs(v) < 1e6
+            else f"-${abs(v)/1e6:.2f}M"
+            for v in valid.values
+        ]
+
+        fig_roi = go.Figure()
+        fig_roi.add_trace(go.Bar(
+            x=valid.index,
+            y=valid.values / 1e3,
+            marker_color=bar_colors,
+            marker_line_width=0,
+            text=bar_text,
+            textposition="outside",
+            textfont=dict(size=12, color="#333333"),
         ))
-        fig_roi.update_layout(**BASE, height=260, showlegend=False,
-            yaxis={**ax("Projected annual revenue lift (USD, thousands)"),
-                   "zeroline": True, "zerolinecolor": "#dddddd"},
+        # Prominent zero line
+        fig_roi.add_hline(y=0, line_color="#444444", line_width=1.2)
+
+        y_max = max(abs(valid.values / 1e3).max() * 1.25, 50)
+        fig_roi.update_layout(**BASE, height=280, showlegend=False,
+            yaxis={
+                **ax("Projected annual revenue lift (USD, thousands)"),
+                "zeroline": False,
+                "range": [-y_max, y_max],
+            },
             xaxis=dict(showgrid=False, tickfont=dict(size=12, color="#444444"),
                        linecolor="#dddddd", linewidth=1, showline=True),
         )
@@ -549,7 +573,11 @@ with tab_dash:
     st.markdown(f"""<div class="fig-caption">
       <b>Figure 4.</b> Projected annual revenue lift by market segment under a {adopt}% adoption
       scenario for {city_str} ({type_str}).
-      Of {len(roi_df):,} listings in scope, {len(eligible):,} have a positive projected revenue lift.
+      Bars extending above zero (blue) indicate segments with net positive revenue impact under
+      the repricing scenario; bars below zero (red) indicate segments where current prices are
+      sufficiently above model estimates that corrective repricing would reduce revenue in aggregate,
+      primarily because overpriced units must reduce their asking rent to recover occupancy.
+      Of {len(roi_df):,} listings in scope, {len(eligible):,} have a positive projected lift.
       At the specified adoption rate, {n_adopt:,} listings would reprice, generating an estimated
       ${proj_lift/1e3:.0f}K in incremental annual revenue
       (mean ${avg_lift:,.0f} per listing per year).
@@ -707,6 +735,11 @@ with tab_model:
           Demand index, distance, and property type collectively account for the remainder.
           The dominance of structural characteristics (size, location) over demand signals is
           consistent with standard hedonic pricing theory.
+          Note that the low importance of the neighborhood demand index ({imp.iloc[0]['Importance']:.1%})
+          reflects a property of the synthetic data generating process, in which demand is a
+          second-order price determinant. In production data, where demand signals are measured
+          with greater granularity and temporal resolution, this feature would be expected to
+          carry materially greater predictive weight.
         </div>""", unsafe_allow_html=True)
 
     with cv_col:
