@@ -284,26 +284,26 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Chart helpers ──────────────────────────────────────────────────────────
-FONT   = dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace")
+FONT   = dict(size=11, color="#2a2926", family="IBM Plex Mono, monospace")
 LEGEND = dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
-              font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+              font=dict(size=10, color="#444444", family="IBM Plex Mono, monospace"),
               bgcolor="rgba(0,0,0,0)")
 BASE   = dict(
-    plot_bgcolor="#191917", paper_bgcolor="#191917", font=FONT,
+    plot_bgcolor="#f5f2ed", paper_bgcolor="#f5f2ed", font=FONT,
     margin=dict(l=8, r=8, t=16, b=8), legend=LEGEND,
 )
 
 def ax(title, grid=True):
     return dict(
-        title=dict(text=title, font=dict(size=10, color="#6b6660",
+        title=dict(text=title, font=dict(size=10, color="#555555",
                    family="IBM Plex Mono, monospace")),
-        tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
-        gridcolor="rgba(232,228,220,0.06)" if grid else "rgba(0,0,0,0)",
-        linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True,
+        tickfont=dict(size=10, color="#444444", family="IBM Plex Mono, monospace"),
+        gridcolor="#e8e4dc" if grid else "rgba(0,0,0,0)",
+        linecolor="#d4cfc8", linewidth=1, showline=True,
         showgrid=grid, zeroline=False, ticks="outside", ticklen=3,
     )
 
-SEG_COLORS = {"Budget": "#6aacad", "Mid-Market": "#c8b97a", "Premium": "#a09b90"}
+SEG_COLORS = {"Budget": "#7bafd4", "Mid-Market": "#3d7ab5", "Premium": "#1a4f82"}
 SEG_ORDER  = ["Budget", "Mid-Market", "Premium"]
 
 # ── Data + Model ───────────────────────────────────────────────────────────
@@ -541,24 +541,24 @@ with tab_dash:
 
         fig_sc = go.Figure()
         fig_sc.add_shape(type="rect", x0=60, x1=100, y0=5,  y1=55,
-                         fillcolor="rgba(106,172,173,0.06)", line_width=0)
+                         fillcolor="rgba(46,125,79,0.06)", line_width=0)
         fig_sc.add_shape(type="rect", x0=60, x1=100, y0=-55, y1=-5,
-                         fillcolor="rgba(200,185,122,0.06)", line_width=0)
+                         fillcolor="rgba(160,96,32,0.06)", line_width=0)
         fig_sc.add_shape(type="rect", x0=0,  x1=40,  y0=5,  y1=55,
-                         fillcolor="rgba(106,172,173,0.03)", line_width=0)
+                         fillcolor="rgba(61,122,181,0.04)", line_width=0)
         fig_sc.add_shape(type="rect", x0=0,  x1=40,  y0=-55, y1=-5,
-                         fillcolor="rgba(201,122,106,0.04)", line_width=0)
+                         fillcolor="rgba(185,64,64,0.04)", line_width=0)
 
         fig_sc.add_hline(y=5,  line_dash="dash", line_color="#6aacad", line_width=1.2,
                          annotation_text="+5% threshold", annotation_position="top right",
-                         annotation_font=dict(size=9, color="#6aacad",
+                         annotation_font=dict(size=9, color="#2e7d4f",
                                               family="IBM Plex Mono, monospace"))
-        fig_sc.add_hline(y=-5, line_dash="dash", line_color="#c97a6a", line_width=1.2,
+        fig_sc.add_hline(y=-5, line_dash="dash", line_color="#b94040", line_width=1.2,
                          annotation_text="-5% threshold", annotation_position="bottom right",
-                         annotation_font=dict(size=9, color="#c97a6a",
+                         annotation_font=dict(size=9, color="#b94040",
                                               family="IBM Plex Mono, monospace"))
-        fig_sc.add_hline(y=0, line_color="rgba(232,228,220,0.10)", line_width=0.75)
-        fig_sc.add_vline(x=60, line_dash="dot", line_color="rgba(232,228,220,0.15)", line_width=0.75)
+        fig_sc.add_hline(y=0, line_color="#cccccc", line_width=0.75)
+        fig_sc.add_vline(x=60, line_dash="dot", line_color="#dddddd", line_width=0.75)
 
         for seg in SEG_ORDER:
             sd = samp[samp["segment"] == seg]
@@ -601,14 +601,14 @@ with tab_dash:
 
         fig_city = go.Figure()
         fig_city.add_trace(go.Bar(y=city_s.index, x=city_s["pct_over"],
-            name="Above threshold", orientation="h", marker_color="#c97a6a"))
+            name="Above threshold", orientation="h", marker_color="#c47a7a"))
         fig_city.add_trace(go.Bar(y=city_s.index, x=city_s["pct_under"],
-            name="Below threshold", orientation="h", marker_color="#6aacad"))
+            name="Below threshold", orientation="h", marker_color="#6a9e6a"))
         fig_city.update_layout(**BASE, height=300, barmode="group",
             xaxis=dict(**ax("Share of listings (%)")),
             yaxis=dict(showgrid=False,
-                       tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
-                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
+                       tickfont=dict(size=10, color="#444444", family="IBM Plex Mono, monospace"),
+                       linecolor="#d4cfc8", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_city, use_container_width=True)
 
@@ -665,17 +665,17 @@ with tab_dash:
             x=valid.index, y=valid.values / 1e3,
             marker_color=bar_colors, marker_line_width=0,
             text=bar_text, textposition="outside",
-            textfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
+            textfont=dict(size=11, color="#333333", family="IBM Plex Mono, monospace"),
         ))
-        fig_roi.add_hline(y=0, line_color="rgba(232,228,220,0.25)", line_width=1.0)
+        fig_roi.add_hline(y=0, line_color="#888888", line_width=1.2)
 
         y_max = max(abs(valid.values / 1e3).max() * 1.25, 50)
         fig_roi.update_layout(**BASE, height=280, showlegend=False,
             yaxis={**ax("Projected annual revenue lift (USD thousands)"),
                    "zeroline": False, "range": [-y_max, y_max]},
             xaxis=dict(showgrid=False,
-                       tickfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
-                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
+                       tickfont=dict(size=11, color="#444444", family="IBM Plex Mono, monospace"),
+                       linecolor="#d4cfc8", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_roi, use_container_width=True)
 
@@ -805,13 +805,13 @@ with tab_model:
     fi_col, cv_col = st.columns([3, 2])
     with fi_col:
         imp    = ma["imp_df"]
-        colors = ["rgba(200,185,122,0.4)" if i < len(imp)-1 else "#c8b97a" for i in range(len(imp))]
+        colors = ["#b8cfe0" if i < len(imp)-1 else "#1a4f82" for i in range(len(imp))]
         imp_labels = [f"{v*100:.1f}%" for v in imp["Importance"]]
         fig_imp = go.Figure(go.Bar(
             x=imp["Importance"], y=imp["Feature"], orientation="h",
             marker_color=colors,
             text=imp_labels, textposition="outside",
-            textfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+            textfont=dict(size=10, color="#333333", family="IBM Plex Mono, monospace"),
             cliponaxis=False,
         ))
         fig_imp.update_layout(
@@ -821,8 +821,8 @@ with tab_model:
                        tickformat=".0%",
                        range=[0, imp["Importance"].max() * 1.35]),
             yaxis=dict(showgrid=False,
-                       tickfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
-                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
+                       tickfont=dict(size=10, color="#444444", family="IBM Plex Mono, monospace"),
+                       linecolor="#d4cfc8", linewidth=1, showline=True),
             showlegend=False,
         )
         st.plotly_chart(fig_imp, use_container_width=True)
@@ -840,27 +840,27 @@ with tab_model:
         cv_df = ma["cv_df"]
         fig_cv = go.Figure(go.Bar(
             x=cv_df["Fold"], y=cv_df["R\u00b2"],
-            marker_color="#c8b97a",
+            marker_color="#3d7ab5",
             text=[f"{v:.4f}" for v in cv_df["R\u00b2"]],
             textposition="inside",
             textfont=dict(size=10, color="#111110", family="IBM Plex Mono, monospace"),
         ))
         fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash",
-                         line_color="rgba(200,185,122,0.5)", line_width=1.2)
+                         line_color="#1a4f82", line_width=1.2)
         fig_cv.add_trace(go.Scatter(
             x=["Fold 1"], y=[ma["r2_mean"] + 0.0007],
             mode="text",
             text=[f"Mean\u202f=\u202f{ma['r2_mean']:.4f}"],
             textposition="top right",
-            textfont=dict(size=10, color="#c8b97a", family="IBM Plex Mono, monospace"),
+            textfont=dict(size=10, color="#1a4f82", family="IBM Plex Mono, monospace"),
             showlegend=False,
         ))
         r2_vals = cv_df["R\u00b2"].values
         fig_cv.update_layout(**BASE, height=300,
             yaxis=dict(**ax("R\u00b2"), range=[min(r2_vals)-0.006, max(r2_vals)+0.010]),
             xaxis=dict(showgrid=False,
-                       tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
-                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
+                       tickfont=dict(size=10, color="#444444", family="IBM Plex Mono, monospace"),
+                       linecolor="#d4cfc8", linewidth=1, showline=True),
             showlegend=False,
         )
         st.plotly_chart(fig_cv, use_container_width=True)
@@ -884,7 +884,7 @@ with tab_model:
         fig_pa = go.Figure()
         fig_pa.add_trace(go.Scatter(
             x=[p_min, p_max], y=[p_min, p_max],
-            mode="lines", line=dict(color="rgba(232,228,220,0.15)", width=1.2, dash="dash"),
+            mode="lines", line=dict(color="#aaaaaa", width=1.2, dash="dash"),
             name="45° line", showlegend=True,
         ))
         for seg in SEG_ORDER:
@@ -894,7 +894,7 @@ with tab_model:
                 x=sd["recommended_price"], y=sd["predicted_price"],
                 mode="markers", name=seg,
                 marker=dict(color=SEG_COLORS[seg], size=5, opacity=0.45,
-                            line=dict(width=0.3, color="rgba(232,228,220,0.1)")),
+                            line=dict(width=0.3, color="white")),
                 hovertemplate="Actual: $%{x:,}<br>Predicted: $%{y:,}<extra></extra>",
             ))
         fig_pa.update_layout(**BASE, height=360,
@@ -904,9 +904,9 @@ with tab_model:
                 x=0.05, y=0.95, xref="paper", yref="paper",
                 text=f"R\u00b2 = {ma['insample_r2']:.4f}   MAE = ${ma['insample_mae']:.0f}",
                 showarrow=False,
-                font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
-                bgcolor="rgba(25,25,23,0.9)",
-                bordercolor="rgba(232,228,220,0.12)", borderwidth=1,
+                font=dict(size=11, color="#333333", family="IBM Plex Mono, monospace"),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="#dddddd", borderwidth=1,
             )],
         )
         st.plotly_chart(fig_pa, use_container_width=True)
@@ -922,18 +922,18 @@ with tab_model:
         fig_res = go.Figure()
         fig_res.add_trace(go.Histogram(
             x=residuals, nbinsx=40,
-            marker_color="#c8b97a", opacity=0.65, name="Residuals",
+            marker_color="#3d7ab5", opacity=0.72, name="Residuals",
         ))
-        fig_res.add_vline(x=0, line_color="rgba(232,228,220,0.3)", line_width=1.2,
+        fig_res.add_vline(x=0, line_color="#555555", line_width=1.2,
                           annotation_text="Zero",
                           annotation_position="top right",
-                          annotation_font=dict(size=9, color="#6b6660",
+                          annotation_font=dict(size=9, color="#555555",
                                                family="IBM Plex Mono, monospace"))
         fig_res.add_vline(x=residuals.mean(), line_dash="dash",
-                          line_color="#c97a6a", line_width=1.2,
+                          line_color="#b94040", line_width=1.2,
                           annotation_text=f"Mean = ${residuals.mean():.1f}",
                           annotation_position="top left",
-                          annotation_font=dict(size=9, color="#c97a6a",
+                          annotation_font=dict(size=9, color="#b94040",
                                                family="IBM Plex Mono, monospace"))
         fig_res.update_layout(**BASE, height=360,
             xaxis=dict(**ax("Residual (actual minus predicted, USD)")),
@@ -943,9 +943,9 @@ with tab_model:
                 x=0.97, y=0.95, xref="paper", yref="paper",
                 text=f"Mean: ${residuals.mean():.1f}   SD: ${residuals.std():.0f}",
                 showarrow=False,
-                font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
-                bgcolor="rgba(25,25,23,0.9)",
-                bordercolor="rgba(232,228,220,0.12)", borderwidth=1,
+                font=dict(size=11, color="#333333", family="IBM Plex Mono, monospace"),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="#dddddd", borderwidth=1,
                 xanchor="right",
             )],
         )
@@ -974,13 +974,13 @@ with tab_model:
             marker_color=[SEG_COLORS[s] for s in seg_err.index],
             text=[f"${v:.0f}" for v in seg_err["mae"]],
             textposition="outside",
-            textfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+            textfont=dict(size=10, color="#333333", family="IBM Plex Mono, monospace"),
         ))
         fig_seg.update_layout(**BASE, height=280, showlegend=False,
             yaxis=dict(**ax("Mean absolute error (USD)")),
             xaxis=dict(showgrid=False,
-                       tickfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
-                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
+                       tickfont=dict(size=11, color="#444444", family="IBM Plex Mono, monospace"),
+                       linecolor="#d4cfc8", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_seg, use_container_width=True)
 
@@ -1002,11 +1002,11 @@ with tab_model:
         fig_het.add_trace(go.Scatter(
             x=samp2["predicted_price"], y=samp2["residual"],
             mode="markers",
-            marker=dict(color="#c8b97a", size=5, opacity=0.35,
-                        line=dict(width=0.3, color="rgba(232,228,220,0.1)")),
+            marker=dict(color="#3d7ab5", size=5, opacity=0.4,
+                        line=dict(width=0.3, color="white")),
             hovertemplate="Predicted: $%{x:,}<br>Residual: $%{y:,}<extra></extra>",
         ))
-        fig_het.add_hline(y=0, line_color="rgba(232,228,220,0.15)", line_width=1.0)
+        fig_het.add_hline(y=0, line_color="#aaaaaa", line_width=1.0)
         fig_het.update_layout(**BASE, height=280,
             xaxis=dict(**ax("Predicted rent (USD)")),
             yaxis=dict(**ax("Residual (USD)")),
@@ -1059,3 +1059,155 @@ with tab_model:
       CV RMSE\u202f=\u202f${ma['rmse_mean']:.0f}/month.
       Data: synthetic, N\u202f=\u202f2,000 listings, five U.S. markets.
     </div>""", unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# APPENDIX: METHODOLOGY AND TERMINOLOGY
+# ══════════════════════════════════════════════════════════════════════════
+
+st.markdown('''<div style="margin-top:3rem;border-top:0.5px solid rgba(232,228,220,0.12);padding-top:2rem;"></div>''', unsafe_allow_html=True)
+
+st.markdown('''<div class="sec-header">Appendix &nbsp;·&nbsp; Methodology and terminology</div>''', unsafe_allow_html=True)
+
+st.markdown('''
+<div class="abstract-text" style="margin-bottom:1.5rem;">
+  This appendix defines every term and metric used in the model in plain language and documents
+  the statistical and operational assumptions underlying the results. It is written for readers
+  without a background in machine learning or real estate economics.
+</div>
+''', unsafe_allow_html=True)
+
+c1, c2 = st.columns(2)
+
+with c1:
+    st.markdown('''
+    <div class="note-head" style="margin-top:1rem;">Model and data</div>
+    <div class="note-body">
+      <p style="margin-bottom:0.75rem;"><b>Gradient Boosting Regressor.</b> An ensemble of decision trees trained sequentially,
+      where each tree corrects the residual errors of the prior one. Unlike a single decision tree,
+      gradient boosting combines hundreds of shallow trees into a single strong predictor.
+      The GBM captures non-linear interactions among features, such as the disproportionate
+      premium commanded by large units in high-demand submarkets, that are inaccessible to linear models.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Ridge regression baseline.</b> A linear model with L2 regularization
+      (alpha = 10.0) that penalizes large coefficients to prevent overfitting. It serves as the
+      linear benchmark against which the GBM gain is measured. The GBM outperforms Ridge by
+      capturing non-linear feature interactions the linear model cannot express.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Cross-validated R².</b> The proportion of variance in actual rent explained
+      by model predictions, evaluated on held-out data not seen during training. A value of 0.946
+      means the model accounts for 94.6% of rent variation in out-of-sample listings.
+      Cross-validation prevents overfitting: all reported metrics reflect out-of-fold performance.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Mean absolute error (MAE).</b> The average absolute difference between
+      predicted and actual rent, in dollars per month. An MAE of $164 on a median rent of $2,200
+      represents a 7.5% mean absolute percentage error. Lower is better; the relevant question
+      is whether MAE is small enough to reliably detect pricing gaps above the 5% threshold.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>RMSE.</b> Root mean squared error. Penalizes large individual errors more
+      heavily than MAE because errors are squared before averaging. RMSE exceeds MAE when a
+      small number of listings have large prediction errors; similar values for both indicate
+      error is distributed evenly across the portfolio.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Synthetic data.</b> The 2,000 listings used in this model are generated
+      programmatically rather than sourced from real transactions. The data generating process
+      encodes realistic relationships between size, location, demand, and rent, but does not
+      represent any actual market. Model performance on real transaction data will depend on
+      comparable quality, feature availability, and market coverage.</p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.markdown('''
+    <div class="note-head" style="margin-top:1.5rem;">Mispricing detection</div>
+    <div class="note-body">
+      <p style="margin-bottom:0.75rem;"><b>Pricing gap.</b> The signed percentage difference between a listing's
+      current asking rent and the model's estimated market-clearing rent. Positive values indicate
+      the listing is below the model estimate (underpriced); negative values indicate it is above
+      (overpriced).</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Five percent threshold.</b> A listing is classified as mispriced if its
+      pricing gap exceeds five percent in either direction. The threshold is calibrated against the
+      model's MAE: flagging deviations smaller than approximately 7.5% of median rent would
+      produce excessive false positives from model noise rather than true pricing gaps. The five
+      percent boundary represents the minimum economically meaningful deviation detectable at
+      this MAE level.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Revenue impact estimate.</b> The projected annual revenue change from
+      repricing a listing to the model estimate, adjusted for occupancy effects under the
+      specified elasticity parameter. Positive values indicate the listing is underpriced and
+      would generate more revenue at the model-recommended rate. Estimates are model-implied
+      and subject to the occupancy elasticity assumption.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Adoption rate.</b> The proportion of eligible listings that actually
+      implement the model recommendation. Full adoption (100%) represents a theoretical upper
+      bound. Realistic deployment friction, including lease constraints, competitive positioning,
+      and manager discretion, justifies partial adoption scenarios in the revenue impact analysis.</p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+with c2:
+    st.markdown('''
+    <div class="note-head" style="margin-top:1rem;">Feature definitions</div>
+    <div class="note-body">
+      <p style="margin-bottom:0.75rem;"><b>Square footage.</b> Interior living area in square feet. The primary
+      size signal. Log-transformed in the final model to capture diminishing returns to size:
+      moving from 500 to 600 sq ft commands a larger proportional premium than moving from
+      1,500 to 1,600 sq ft.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Neighborhood demand score.</b> A composite index (0 to 100) derived from
+      listing velocity and days-on-market within the submarket. Higher scores indicate faster
+      absorption and stronger demand pressure. In production deployments, this signal would be
+      computed as a rolling, market-specific metric updated on a weekly or monthly basis.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Distance to city center.</b> Straight-line distance in miles from the
+      listing to the central business district of the metropolitan area. Negatively correlated
+      with rent throughout; the non-linear distance decay (premium units near the center command
+      disproportionately higher rents) is captured naturally by the GBM without manual
+      transformation.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Metropolitan market.</b> One of five U.S. cities in the synthetic dataset:
+      Austin, Chicago, Denver, Nashville, and Seattle. Treated as a categorical feature. Each
+      market has a distinct rent distribution and demand profile embedded in the data generating
+      process.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Market segment.</b> Client-defined classification into Budget, Mid-Market,
+      or Premium tiers. Interacts with size and location features in the GBM; the premium segment
+      exhibits the widest absolute pricing gaps and the largest MAE in absolute dollar terms,
+      while MAPE remains comparable across segments.</p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+    st.markdown('''
+    <div class="note-head" style="margin-top:1.5rem;">Residual diagnostics</div>
+    <div class="note-body">
+      <p style="margin-bottom:0.75rem;"><b>Unbiasedness.</b> A well-specified model produces residuals centered near
+      zero with no systematic trend. A non-zero residual mean indicates the model systematically
+      over- or under-predicts rent across the portfolio, which would bias pricing recommendations
+      in one direction.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Homoscedasticity.</b> Constant error variance across the range of predicted
+      values. Heteroscedasticity, where prediction errors grow larger at higher rent levels, would
+      imply the model is less reliable for premium listings and the five percent threshold should
+      be widened for that segment.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>Feature importance.</b> Computed as the mean reduction in squared error
+      attributable to each feature across all decision trees in the ensemble. Proportional, not
+      absolute: a feature with 40% importance contributes twice as much to prediction accuracy
+      as one with 20%, on average. The dominance of square footage and metropolitan market
+      is consistent with standard hedonic pricing theory.</p>
+
+      <p style="margin-bottom:0.75rem;"><b>SHAP values.</b> Not computed in this application. Feature importance
+      reported here is the standard GBM split-based importance. A production deployment would
+      supplement this with SHAP (SHapley Additive exPlanations) values to support per-listing
+      explainability for property managers, enabling statements such as "this listing is
+      overpriced primarily because its neighborhood demand score has declined."</p>
+    </div>
+    ''', unsafe_allow_html=True)
+
+st.markdown(f'''<div class="paper-footer">
+  Data: synthetic, N\u202f=\u202f2,000 residential listings, five U.S. metropolitan markets.
+  Model: GradientBoostingRegressor (scikit-learn). Evaluation: stratified 5-fold CV.
+  CV R\u00b2\u202f=\u202f{ma['r2_mean']:.3f}. CV MAE\u202f=\u202f${ma['mae_mean']:.0f}/month.
+  Ridge baseline CV R\u00b2\u202f=\u202f{ma['baseline_r2_mean']:.3f}.
+  This application is for analytical and portfolio demonstration purposes only.
+</div>''', unsafe_allow_html=True)
