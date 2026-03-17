@@ -13,231 +13,297 @@ from model import fit_model
 st.set_page_config(
     page_title="Rental Pricing Efficiency: A Gradient Boosting Approach",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown("""
 <style>
-  /* ── Typography system ── */
-  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
+  /* ── Hide sidebar entirely ── */
+  [data-testid="stSidebar"] { display: none !important; }
+  [data-testid="collapsedControl"] { display: none !important; }
 
-  .block-container { padding-top: 4rem; padding-bottom: 3rem; max-width: 1160px; }
+  /* ── Base / typography ── */
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
 
-  /* Title block */
+  .stApp { background: #111110; }
+  .block-container {
+    padding-top: 3rem; padding-bottom: 4rem;
+    max-width: 1160px; background: #111110;
+  }
+
+  /* All default streamlit text */
+  .stApp, .stApp p, .stApp div, .stApp span,
+  .stMarkdown, .stMarkdown p {
+    color: #e8e4dc !important;
+  }
+
+  /* ── Paper title block ── */
   .paper-title {
     font-family: 'EB Garamond', Georgia, serif;
-    font-size: 28px; font-weight: 500; line-height: 1.3;
-    color: var(--text-color); margin-bottom: 0.4rem;
-    letter-spacing: -0.01em;
+    font-size: 30px; font-weight: 500; line-height: 1.25;
+    color: #e8e4dc; margin-bottom: 0.35rem; letter-spacing: -0.01em;
   }
   .paper-byline {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px; color: var(--text-color); opacity: 0.55;
-    margin-bottom: 1.5rem; letter-spacing: 0.01em;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: #6b6660;
+    margin-bottom: 1.75rem; letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
-  /* Abstract */
+  /* ── Abstract ── */
   .abstract-box {
-    border-top: 1px solid rgba(128,128,128,0.25);
-    border-bottom: 1px solid rgba(128,128,128,0.25);
-    padding: 1.1rem 0; margin-bottom: 2rem;
+    border-top: 0.5px solid rgba(232,228,220,0.12);
+    border-bottom: 0.5px solid rgba(232,228,220,0.12);
+    padding: 1rem 0; margin-bottom: 2.25rem;
   }
   .abstract-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; opacity: 0.45; color: var(--text-color);
-    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6b6660; margin-bottom: 6px;
   }
   .abstract-text {
     font-family: 'EB Garamond', Georgia, serif;
-    font-size: 15px; line-height: 1.75; color: var(--text-color);
-    max-width: 860px;
+    font-size: 15px; line-height: 1.8; color: #a09b90; max-width: 860px;
   }
 
-  /* Section headers */
-  .sec-header {
-    font-family: 'Inter', sans-serif;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--text-color); opacity: 0.4;
-    margin: 2.25rem 0 0.75rem; padding-bottom: 5px;
-    border-bottom: 1px solid rgba(128,128,128,0.15);
+  /* ── Filter bar ── */
+  .filter-bar {
+    background: #191917;
+    border: 0.5px solid rgba(232,228,220,0.10);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2.5rem;
   }
-
-  /* KPI cards */
-  .kpi-card {
-    border: 1px solid rgba(128,128,128,0.15);
-    border-radius: 3px; padding: 1rem 1.1rem;
-    background: rgba(128,128,128,0.03);
+  .filter-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6b6660;
+    margin-bottom: 0.75rem; display: block;
   }
-  .kpi-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; opacity: 0.45; color: var(--text-color); margin-bottom: 6px;
-  }
-  .kpi-value {
-    font-family: 'Inter', sans-serif;
-    font-size: 28px; font-weight: 500; line-height: 1.1; color: var(--text-color);
-  }
-  .kpi-sub {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px; margin-top: 4px; opacity: 0.55; color: var(--text-color);
-  }
-  .pos { color: #2e7d4f !important; opacity: 1 !important; font-weight: 500; }
-  .neg { color: #b94040 !important; opacity: 1 !important; font-weight: 500; }
-
-  /* Figure captions */
-  .fig-caption {
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 13.5px; line-height: 1.75; color: var(--text-color);
-    opacity: 0.8; margin-top: 0.1rem; margin-bottom: 1.25rem;
-    max-width: 100%; font-style: italic;
-    word-spacing: 0.02em; letter-spacing: normal;
-    white-space: normal; word-break: normal; overflow-wrap: normal;
-  }
-  .fig-caption b { font-style: normal; font-weight: 600; opacity: 1; color: var(--text-color); }
-
-  /* Segment summary cards */
-  .seg-card {
-    border: 1px solid rgba(128,128,128,0.15);
-    border-radius: 3px; padding: 0.8rem 1rem; margin-bottom: 8px;
-    background: rgba(128,128,128,0.03);
-  }
-  .seg-name  {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px; font-weight: 600; color: var(--text-color);
-  }
-  .seg-count { font-size: 12px; opacity: 0.45; color: var(--text-color); font-family: 'Inter', sans-serif; }
-  .seg-price { font-size: 13px; color: var(--text-color); margin-top: 5px; font-family: 'Inter', sans-serif; }
-  .seg-lift  { font-size: 12px; opacity: 0.6; color: var(--text-color); margin-top: 3px; font-family: 'Inter', sans-serif; }
-
-  /* Model KPI cards */
-  .model-kpi {
-    border: 1px solid rgba(128,128,128,0.15); border-radius: 3px;
-    padding: 0.85rem 1rem; background: rgba(128,128,128,0.03); text-align: center;
-  }
-  .model-kpi-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; opacity: 0.45; color: var(--text-color); margin-bottom: 5px;
-  }
-  .model-kpi-value {
-    font-family: 'Inter', sans-serif;
-    font-size: 24px; font-weight: 500; color: var(--text-color);
-  }
-  .model-kpi-sub {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px; opacity: 0.5; color: var(--text-color); margin-top: 3px;
-  }
-  .model-kpi-good { color: #2e7d4f !important; opacity: 1 !important; }
-  .model-kpi-mid  { color: #a06020 !important; opacity: 1 !important; }
-
-  /* Notes section */
-  .note-head {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--text-color); opacity: 0.6;
-    margin-bottom: 8px; word-spacing: normal; white-space: normal;
-  }
-  .note-body {
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 14px; line-height: 1.75; color: var(--text-color); opacity: 0.85;
-    word-spacing: 0.02em; letter-spacing: normal; white-space: normal;
-    word-break: normal; overflow-wrap: normal;
-  }
-
-  /* Footer */
-  .paper-footer {
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 12.5px; color: var(--text-color); opacity: 0.4;
-    margin-top: 3rem; padding-top: 1rem;
-    border-top: 1px solid rgba(128,128,128,0.15);
-    line-height: 1.6;
-  }
-
-  /* ── Sidebar ── */
-  [data-testid="stSidebar"] {
-    background: rgba(128,128,128,0.02);
-    border-right: 1px solid rgba(128,128,128,0.12);
-  }
-
-  /* Sidebar section labels (bold markdown) */
-  [data-testid="stSidebar"] strong {
-    font-family: 'Inter', sans-serif;
-    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; opacity: 0.45; color: var(--text-color);
-  }
-
-  /* Sidebar all text */
-  [data-testid="stSidebar"] p,
-  [data-testid="stSidebar"] .stMarkdown p {
-    font-family: 'Inter', sans-serif;
-    font-size: 12px; color: var(--text-color); opacity: 0.8;
-  }
-
-  /* Sidebar widget labels */
-  [data-testid="stSidebar"] label,
-  [data-testid="stSidebar"] .stSelectbox label,
-  [data-testid="stSidebar"] .stMultiSelect label,
-  [data-testid="stSidebar"] .stSlider label {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 11px !important; font-weight: 500 !important;
-    letter-spacing: 0.02em; color: var(--text-color) !important;
-    opacity: 0.7;
-  }
-
-  /* Sidebar caption text */
-  [data-testid="stSidebar"] .stCaption,
-  [data-testid="stSidebar"] small {
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 12px; opacity: 0.45; color: var(--text-color);
-    line-height: 1.6;
-  }
-
-  /* Sidebar horizontal rule */
-  [data-testid="stSidebar"] hr {
+  .filter-divider {
     border: none;
-    border-top: 1px solid rgba(128,128,128,0.18);
+    border-top: 0.5px solid rgba(232,228,220,0.08);
     margin: 1rem 0;
   }
 
-  /* Sidebar multiselect tags */
-  [data-testid="stSidebar"] [data-baseweb="tag"] {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
+  /* ── Section headers ── */
+  .sec-header {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6b6660;
+    margin: 2.5rem 0 1rem; padding-bottom: 6px;
+    border-bottom: 0.5px solid rgba(232,228,220,0.10);
+    display: block;
   }
 
-  /* Slider value label */
-  [data-testid="stSidebar"] [data-testid="stTickBar"] {
-    font-family: 'Inter', sans-serif; font-size: 11px;
+  /* ── KPI cards ── */
+  .kpi-card {
+    border: 0.5px solid rgba(232,228,220,0.10);
+    border-radius: 3px; padding: 1rem 1.1rem;
+    background: #191917;
+  }
+  .kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #6b6660; margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 32px; font-weight: 400; line-height: 1; color: #e8e4dc;
+  }
+  .kpi-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; margin-top: 5px; color: #6b6660;
+  }
+  .pos { color: #6aacad !important; font-weight: 500; }
+  .neg { color: #c97a6a !important; font-weight: 500; }
+  .acc { color: #c8b97a !important; font-weight: 500; }
+
+  /* ── Scenario control panel ── */
+  .ctrl-panel {
+    background: #191917;
+    border: 0.5px solid rgba(232,228,220,0.10);
+    border-radius: 4px;
+    padding: 0.9rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Figure captions ── */
+  .fig-caption {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 13.5px; line-height: 1.75; color: #6b6660;
+    margin-top: 0.25rem; margin-bottom: 1.25rem;
+    font-style: italic;
+  }
+  .fig-caption b { font-style: normal; font-weight: 600; color: #a09b90; }
+
+  /* ── Segment cards ── */
+  .seg-card {
+    border: 0.5px solid rgba(232,228,220,0.10);
+    border-radius: 3px; padding: 0.8rem 1rem; margin-bottom: 6px;
+    background: #191917;
+  }
+  .seg-name  { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+               font-weight: 500; color: #e8e4dc; letter-spacing: 0.04em; }
+  .seg-count { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+               color: #6b6660; }
+  .seg-price { font-family: 'EB Garamond', Georgia, serif; font-size: 14px;
+               color: #a09b90; margin-top: 4px; }
+  .seg-lift  { font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+               color: #6b6660; margin-top: 3px; }
+
+  /* ── Model KPI cards ── */
+  .model-kpi {
+    border: 0.5px solid rgba(232,228,220,0.10); border-radius: 3px;
+    padding: 0.85rem 1rem; background: #191917; text-align: center;
+  }
+  .model-kpi-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #6b6660; margin-bottom: 5px;
+  }
+  .model-kpi-value {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 28px; font-weight: 400; color: #e8e4dc;
+  }
+  .model-kpi-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: #6b6660; margin-top: 3px;
+  }
+  .model-kpi-good { color: #6aacad !important; }
+  .model-kpi-mid  { color: #c8b97a !important; }
+
+  /* ── Note sections ── */
+  .note-head {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #6b6660;
+    margin-bottom: 8px;
+  }
+  .note-body {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 14px; line-height: 1.75; color: #a09b90;
+  }
+
+  /* ── Footer ── */
+  .paper-footer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: #6b6660;
+    margin-top: 3rem; padding-top: 1rem;
+    border-top: 0.5px solid rgba(232,228,220,0.10);
+    line-height: 1.7;
+  }
+
+  /* ── Streamlit widget overrides ── */
+  /* Labels */
+  .stSelectbox label, .stMultiSelect label,
+  .stSlider label, .stNumberInput label {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 10px !important; font-weight: 500 !important;
+    letter-spacing: 0.10em !important;
+    text-transform: uppercase !important;
+    color: #6b6660 !important;
+  }
+
+  /* Input backgrounds */
+  .stSelectbox > div > div,
+  .stMultiSelect > div > div {
+    background: #222220 !important;
+    border: 0.5px solid rgba(232,228,220,0.15) !important;
+    border-radius: 3px !important;
+    color: #e8e4dc !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 12px !important;
+  }
+
+  /* Slider track */
+  .stSlider [data-baseweb="slider"] [role="slider"] {
+    background: #c8b97a !important;
+    border-color: #c8b97a !important;
+  }
+  .stSlider [data-baseweb="slider"] div[data-testid="stTickBar"] {
+    color: #6b6660 !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 10px !important;
+  }
+
+  /* Multiselect tags */
+  [data-baseweb="tag"] {
+    background: #2c2c29 !important;
+    border: 0.5px solid rgba(232,228,220,0.15) !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 11px !important;
+    color: #a09b90 !important;
   }
 
   /* Tab buttons */
   [data-testid="stTabs"] button {
-    font-family: 'Inter', sans-serif; font-size: 13px;
-    font-weight: 500; letter-spacing: 0.02em;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 11px !important; font-weight: 500 !important;
+    letter-spacing: 0.08em !important; text-transform: uppercase !important;
+    color: #6b6660 !important;
   }
+  [data-testid="stTabs"] button[aria-selected="true"] {
+    color: #c8b97a !important;
+    border-bottom-color: #c8b97a !important;
+  }
+
+  /* Dataframe */
+  .stDataFrame { border: 0.5px solid rgba(232,228,220,0.10) !important; }
+
+  /* Metric */
+  [data-testid="metric-container"] {
+    background: #191917;
+    border: 0.5px solid rgba(232,228,220,0.10);
+    border-radius: 3px; padding: 0.75rem 1rem;
+  }
+  [data-testid="metric-container"] label {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 9px !important; letter-spacing: 0.12em !important;
+    text-transform: uppercase !important; color: #6b6660 !important;
+  }
+  [data-testid="metric-container"] [data-testid="stMetricValue"] {
+    font-family: 'EB Garamond', Georgia, serif !important;
+    font-size: 26px !important; color: #e8e4dc !important;
+  }
+
+  /* Expander */
+  [data-testid="stExpander"] {
+    background: #191917 !important;
+    border: 0.5px solid rgba(232,228,220,0.10) !important;
+    border-radius: 4px !important;
+  }
+  [data-testid="stExpander"] summary {
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 10px !important; font-weight: 500 !important;
+    letter-spacing: 0.12em !important; text-transform: uppercase !important;
+    color: #6b6660 !important;
+  }
+  [data-testid="stExpander"] summary:hover { color: #c8b97a !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ── Chart helpers ──────────────────────────────────────────────────────────
-FONT   = dict(size=12, color="#1a1a1a", family="Inter, Arial, sans-serif")
+FONT   = dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace")
 LEGEND = dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
-              font=dict(size=11, color="#1a1a1a"), bgcolor="rgba(0,0,0,0)")
+              font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+              bgcolor="rgba(0,0,0,0)")
 BASE   = dict(
-    plot_bgcolor="white", paper_bgcolor="white", font=FONT,
+    plot_bgcolor="#191917", paper_bgcolor="#191917", font=FONT,
     margin=dict(l=8, r=8, t=16, b=8), legend=LEGEND,
 )
 
 def ax(title, grid=True):
     return dict(
-        title=dict(text=title, font=dict(size=12, color="#333333")),
-        tickfont=dict(size=11, color="#444444"),
-        gridcolor="#f0f0f0" if grid else "rgba(0,0,0,0)",
-        linecolor="#dddddd", linewidth=1, showline=True,
+        title=dict(text=title, font=dict(size=10, color="#6b6660",
+                   family="IBM Plex Mono, monospace")),
+        tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
+        gridcolor="rgba(232,228,220,0.06)" if grid else "rgba(0,0,0,0)",
+        linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True,
         showgrid=grid, zeroline=False, ticks="outside", ticklen=3,
     )
 
-SEG_COLORS = {"Budget": "#7bafd4", "Mid-Market": "#3d7ab5", "Premium": "#1a4f82"}
+SEG_COLORS = {"Budget": "#6aacad", "Mid-Market": "#c8b97a", "Premium": "#a09b90"}
 SEG_ORDER  = ["Budget", "Mid-Market", "Premium"]
 
 # ── Data + Model ───────────────────────────────────────────────────────────
@@ -247,30 +313,62 @@ def load_data():
 
 df_full = load_data()
 
-with st.spinner("Estimating model parameters..."):
+with st.spinner("Fitting model..."):
     ma = fit_model(df_full)
 
-# ── Sidebar ────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown('<p style="font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.45;margin-bottom:0.5rem;">Filter parameters</p>', unsafe_allow_html=True)
-    cities     = st.multiselect("City", sorted(df_full["city"].unique()),
-                                 default=sorted(df_full["city"].unique()))
-    prop_types = st.multiselect("Property type", ["Studio","1BR","2BR","3BR+"],
-                                 default=["Studio","1BR","2BR","3BR+"])
-    segments   = st.multiselect("Market segment", ["Budget","Mid-Market","Premium"],
-                                 default=["Budget","Mid-Market","Premium"])
-    dem_range  = st.slider("Demand score", 0, 100, (0, 100))
-    st.markdown('<hr style="border:none;border-top:1px solid rgba(128,128,128,0.18);margin:1rem 0;">', unsafe_allow_html=True)
-    st.markdown('<p style="font-family:Inter,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;opacity:0.45;margin-bottom:0.5rem;">Model parameters</p>', unsafe_allow_html=True)
-    elasticity = st.slider("Demand elasticity", 0.5, 2.0, 1.0, 0.1,
-                            help="Price elasticity of demand. Higher values indicate greater sensitivity of occupancy to price changes.")
-    occ_target = st.slider("Target occupancy (%)", 70, 98, 88)
-    st.markdown('<hr style="border:none;border-top:1px solid rgba(128,128,128,0.18);margin:1rem 0;">', unsafe_allow_html=True)
-    st.caption(
-        f"Synthetic dataset. N\u202f=\u202f2,000 listings. "
-        f"Five metropolitan markets. "
-        f"Model CV R\u00b2\u202f=\u202f{ma['r2_mean']:.3f}."
-    )
+# ── Title block ────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="paper-title">Rental Pricing Efficiency in Multi-Market Residential Portfolios</div>
+<div class="paper-byline">Gradient boosting approach &nbsp;·&nbsp; Mispricing detection &nbsp;·&nbsp; Revenue optimization</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="abstract-box">
+  <div class="abstract-label">Abstract</div>
+  <div class="abstract-text">
+    Manual rent-setting in residential property management produces systematic pricing
+    inefficiencies at scale: a portion of the portfolio is priced above market equilibrium,
+    generating vacancy drag, while another portion is priced below, forgoing attainable revenue.
+    This analysis applies a Gradient Boosting Regressor trained on observable listing features
+    to predict market-clearing monthly rent across {len(df_full):,} synthetic listings in five
+    U.S. markets. The model achieves a cross-validated R\u00b2 of {ma['r2_mean']:.3f}
+    (MAE\u202f=\u202f${ma['mae_mean']:.0f}/month), outperforming a Ridge regression baseline
+    (R\u00b2\u202f=\u202f{ma['baseline_r2_mean']:.3f}) by
+    {(ma['r2_mean']-ma['baseline_r2_mean'])*100:.1f} percentage points.
+    Deviations exceeding five percent from model estimates are flagged as pricing gaps.
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Inline filter bar ──────────────────────────────────────────────────────
+with st.expander("Filter parameters", expanded=True):
+    fc1, fc2, fc3 = st.columns(3)
+    with fc1:
+        cities = st.multiselect(
+            "City", sorted(df_full["city"].unique()),
+            default=sorted(df_full["city"].unique())
+        )
+    with fc2:
+        prop_types = st.multiselect(
+            "Property type", ["Studio", "1BR", "2BR", "3BR+"],
+            default=["Studio", "1BR", "2BR", "3BR+"]
+        )
+    with fc3:
+        segments = st.multiselect(
+            "Market segment", ["Budget", "Mid-Market", "Premium"],
+            default=["Budget", "Mid-Market", "Premium"]
+        )
+
+    fs1, fs2, fs3 = st.columns(3)
+    with fs1:
+        dem_range = st.slider("Demand score range", 0, 100, (0, 100))
+    with fs2:
+        elasticity = st.slider(
+            "Demand elasticity", 0.5, 2.0, 1.0, 0.1,
+            help="Price elasticity of demand. Higher values indicate greater occupancy sensitivity to price."
+        )
+    with fs3:
+        occ_target = st.slider("Target occupancy (%)", 70, 98, 88)
 
 # ── Filter ─────────────────────────────────────────────────────────────────
 df = df_full[
@@ -291,34 +389,6 @@ if len(df) == 0:
     st.warning("No listings satisfy the current filter criteria.")
     st.stop()
 
-# ── Title block ────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="paper-title">Rental Pricing Efficiency in Multi-Market Residential Portfolios</div>
-<div class="paper-byline">
-  A gradient boosting approach to systematic mispricing detection and revenue optimization
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(f"""
-<div class="abstract-box">
-  <div class="abstract-label">Abstract</div>
-  <div class="abstract-text">
-    Manual rent-setting practices in residential property management produce systematic pricing
-    inefficiencies at scale: a portion of the portfolio is priced above market equilibrium,
-    generating vacancy drag, while another portion is priced below, forgoing attainable revenue.
-    This analysis applies a Gradient Boosting Regressor trained on observable listing features
-    (square footage, neighborhood demand score, distance to city center, metropolitan market,
-    and property type) to predict market-clearing monthly rent across {len(df_full):,} synthetic
-    listings in five U.S. markets. The model achieves a cross-validated R\u00b2 of
-    {ma['r2_mean']:.3f} (MAE = ${ma['mae_mean']:.0f}/month), outperforming a Ridge regression
-    baseline (R\u00b2 = {ma['baseline_r2_mean']:.3f}) by {(ma['r2_mean']-ma['baseline_r2_mean'])*100:.1f}
-    percentage points. Pricing deviations exceeding five percent from model estimates
-    are flagged as actionable mispricings. The interactive dashboard below supports
-    scenario analysis across market segments, adoption assumptions, and elasticity parameters.
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
 # ══════════════════════════════════════════════════════════════════════════
 # TABS
 # ══════════════════════════════════════════════════════════════════════════
@@ -330,7 +400,7 @@ tab_dash, tab_model = st.tabs(["Results and Analysis", "Model Performance"])
 with tab_dash:
 
     # ── Portfolio summary ──────────────────────────────────────────────────
-    st.markdown('<div class="sec-header">1. Portfolio summary statistics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">1 &nbsp;·&nbsp; Portfolio summary statistics</div>', unsafe_allow_html=True)
 
     total_lift  = df["annual_revenue_lift"].sum()
     med_cur     = df["current_price"].median()
@@ -347,52 +417,48 @@ with tab_dash:
     lift_word   = "net gain" if total_lift >= 0 else "net drag"
 
     k1, k2, k3, k4 = st.columns(4)
+    lift_cls = "pos" if total_lift >= 0 else "neg"
+    delta_cls = "pos" if price_delta >= 0 else "neg"
     with k1:
-        dc = "pos" if total_lift >= 0 else "neg"
         st.markdown(f"""<div class="kpi-card">
-          <div class="kpi-label">Estimated annual revenue impact</div>
-          <div class="kpi-value <{dc}>">${total_lift/1e6:.2f}M</div>
+          <div class="kpi-label">Est. annual revenue impact</div>
+          <div class="kpi-value <{lift_cls}>">${total_lift/1e6:.2f}M</div>
           <div class="kpi-sub">full-adoption repricing scenario</div>
         </div>""", unsafe_allow_html=True)
     with k2:
-        dc = "pos" if price_delta >= 0 else "neg"
         st.markdown(f"""<div class="kpi-card">
           <div class="kpi-label">Median model-recommended rent</div>
           <div class="kpi-value">${med_rec:,.0f}</div>
-          <div class="kpi-sub">vs. <span class="{dc}">${med_cur:,.0f} current ({delta_pct:+.1f}%)</span></div>
+          <div class="kpi-sub">vs. <span class="{delta_cls}">${med_cur:,.0f} current ({delta_pct:+.1f}%)</span></div>
         </div>""", unsafe_allow_html=True)
     with k3:
         st.markdown(f"""<div class="kpi-card">
-          <div class="kpi-label">Listings with material mispricing</div>
+          <div class="kpi-label">Listings with material pricing gap</div>
           <div class="kpi-value">{pct_over + pct_under:.0f}%</div>
           <div class="kpi-sub">
-            <span class="neg">{pct_over:.0f}% above threshold</span> &nbsp;|&nbsp;
+            <span class="neg">{pct_over:.0f}% above threshold</span> &nbsp;·&nbsp;
             <span class="pos">{pct_under:.0f}% below threshold</span>
           </div>
         </div>""", unsafe_allow_html=True)
     with k4:
         occ_dir = f"{abs(occ_gap):.1f} pts {'above' if occ_gap >= 0 else 'below'} target"
         st.markdown(f"""<div class="kpi-card">
-          <div class="kpi-label">Mean portfolio occupancy rate</div>
+          <div class="kpi-label">Mean portfolio occupancy</div>
           <div class="kpi-value">{avg_occ:.1f}%</div>
-          <div class="kpi-sub">{occ_dir} &nbsp;|&nbsp; median demand index: {med_demand:.0f}</div>
+          <div class="kpi-sub">{occ_dir} &nbsp;·&nbsp; demand index {med_demand:.0f}</div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown(f"""<div class="fig-caption">
-      <b>Table 1.</b> Portfolio-level summary statistics for the filtered sample
-      (N = {len(df):,} listings, {len(cities)} {'market' if len(cities) == 1 else 'markets'}).
-      A listing is classified as materially mispriced if its current rent deviates from the
-      model estimate by more than five percent in either direction.
-      Of the {len(df):,} listings analyzed, {n_over:,} ({pct_over:.0f}%) are priced above the
-      five-percent threshold and {n_under:,} ({pct_under:.0f}%) are priced below it.
-      Under a full-adoption scenario, systematic repricing to model estimates would generate
-      an estimated {lift_word} of ${abs(total_lift)/1e6:.2f}M annually across the portfolio.
-      Mean occupancy of {avg_occ:.1f}% is {abs(occ_gap):.1f} percentage points
-      {'above' if occ_gap >= 0 else 'below'} the {occ_target}% operational target.
+      <b>Table 1.</b> Portfolio-level statistics for the filtered sample (N\u202f=\u202f{len(df):,} listings,
+      {len(cities)} {'market' if len(cities)==1 else 'markets'}).
+      A listing is classified as mispriced if its current rent deviates from the model estimate
+      by more than five percent. Of {len(df):,} listings, {n_over:,} ({pct_over:.0f}%) are above
+      the threshold and {n_under:,} ({pct_under:.0f}%) are below it. Under full adoption,
+      systematic repricing generates an estimated {lift_word} of ${abs(total_lift)/1e6:.2f}M annually.
     </div>""", unsafe_allow_html=True)
 
     # ── Pricing distribution ───────────────────────────────────────────────
-    st.markdown('<div class="sec-header">2. Rent distribution by market segment</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">2 &nbsp;·&nbsp; Rent distribution by market segment</div>', unsafe_allow_html=True)
 
     seg_sum = df.groupby("segment", observed=True).agg(
         listings   = ("current_price",       "count"),
@@ -423,21 +489,17 @@ with tab_dash:
             ))
         fig_box.update_layout(**BASE, height=360,
             yaxis=dict(**ax("Monthly rent (USD)")),
-            xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            xaxis=dict(showgrid=False,
+                       tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_box, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 1.</b> Box plots of current listed rents (solid fill) versus model-estimated
-          market-clearing rents (translucent fill) by segment.
-          The horizontal line within each box represents the median; the box bounds denote the
-          interquartile range; whiskers extend to 1.5x the IQR.
-          The triangle marker indicates the distribution mean.
-          Systematic downward displacement of model-estimate boxes relative to current-price boxes
-          indicates overpricing within a segment.
-          The {big_seg} segment exhibits the largest aggregate pricing gap,
-          with an estimated ${abs(big_lift)/1e3:.0f}K annual revenue impact under full correction.
+          <b>Figure 1.</b> Box plots of current listed rents (solid) versus model-estimated
+          market-clearing rents (translucent) by segment. The {big_seg} segment exhibits the
+          largest aggregate pricing gap (estimated ${abs(big_lift)/1e3:.0f}K annual impact
+          under full correction).
         </div>""", unsafe_allow_html=True)
 
     with col_seg:
@@ -450,22 +512,22 @@ with tab_dash:
             dc   = "pos" if lift >= 0 else "neg"
             ls   = f"${lift/1e3:+.0f}K" if abs(lift) < 1e6 else f"${lift/1e6:+.2f}M"
             st.markdown(f"""<div class="seg-card">
-              <div style="display:flex;justify-content:space-between;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
                 <span class="seg-name">{seg}</span>
-                <span class="seg-count">N = {int(row['listings']):,}</span>
+                <span class="seg-count">N\u202f=\u202f{int(row['listings']):,}</span>
               </div>
               <div class="seg-price">
                 ${row['med_cur']:,.0f} &rarr; <b>${row['med_rec']:,.0f}</b>
                 <span class="{dc}"> ({dp:+.1f}%)</span>
               </div>
               <div class="seg-lift">
-                Revenue impact: <span class="{dc}">{ls}</span> &nbsp;|&nbsp;
+                Revenue impact: <span class="{dc}">{ls}</span> &nbsp;·&nbsp;
                 Occupancy: {row['avg_occ']*100:.1f}%
               </div>
             </div>""", unsafe_allow_html=True)
 
     # ── Opportunity map ────────────────────────────────────────────────────
-    st.markdown('<div class="sec-header">3. Mispricing characterization across the demand distribution</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">3 &nbsp;·&nbsp; Mispricing across the demand distribution</div>', unsafe_allow_html=True)
 
     hd_op = len(df[(df["demand_score"] > 60) & (df["price_gap_pct"] < -5)])
     ld_up = len(df[(df["demand_score"] < 40) & (df["price_gap_pct"] > 5)])
@@ -474,27 +536,29 @@ with tab_dash:
     with col_sc:
         rng_j = np.random.default_rng(7)
         samp  = df.sample(min(400, len(df)), random_state=42).copy()
-        samp["demand_j"]  = samp["demand_score"] + rng_j.uniform(-0.6, 0.6, len(samp))
-        samp["gap_j"]     = samp["price_gap_pct"] + rng_j.uniform(-0.2, 0.2, len(samp))
+        samp["demand_j"] = samp["demand_score"] + rng_j.uniform(-0.6, 0.6, len(samp))
+        samp["gap_j"]    = samp["price_gap_pct"] + rng_j.uniform(-0.2, 0.2, len(samp))
 
         fig_sc = go.Figure()
         fig_sc.add_shape(type="rect", x0=60, x1=100, y0=5,  y1=55,
-                         fillcolor="rgba(46,125,79,0.06)",  line_width=0)
+                         fillcolor="rgba(106,172,173,0.06)", line_width=0)
         fig_sc.add_shape(type="rect", x0=60, x1=100, y0=-55, y1=-5,
-                         fillcolor="rgba(160,96,32,0.06)",  line_width=0)
+                         fillcolor="rgba(200,185,122,0.06)", line_width=0)
         fig_sc.add_shape(type="rect", x0=0,  x1=40,  y0=5,  y1=55,
-                         fillcolor="rgba(61,122,181,0.04)", line_width=0)
+                         fillcolor="rgba(106,172,173,0.03)", line_width=0)
         fig_sc.add_shape(type="rect", x0=0,  x1=40,  y0=-55, y1=-5,
-                         fillcolor="rgba(185,64,64,0.04)",  line_width=0)
+                         fillcolor="rgba(201,122,106,0.04)", line_width=0)
 
-        fig_sc.add_hline(y=5,  line_dash="dash", line_color="#2e7d4f", line_width=1.2,
+        fig_sc.add_hline(y=5,  line_dash="dash", line_color="#6aacad", line_width=1.2,
                          annotation_text="+5% threshold", annotation_position="top right",
-                         annotation_font=dict(size=10, color="#2e7d4f"))
-        fig_sc.add_hline(y=-5, line_dash="dash", line_color="#b94040", line_width=1.2,
+                         annotation_font=dict(size=9, color="#6aacad",
+                                              family="IBM Plex Mono, monospace"))
+        fig_sc.add_hline(y=-5, line_dash="dash", line_color="#c97a6a", line_width=1.2,
                          annotation_text="-5% threshold", annotation_position="bottom right",
-                         annotation_font=dict(size=10, color="#b94040"))
-        fig_sc.add_hline(y=0, line_color="#cccccc", line_width=0.75)
-        fig_sc.add_vline(x=60, line_dash="dot", line_color="#bbbbbb", line_width=0.75)
+                         annotation_font=dict(size=9, color="#c97a6a",
+                                              family="IBM Plex Mono, monospace"))
+        fig_sc.add_hline(y=0, line_color="rgba(232,228,220,0.10)", line_width=0.75)
+        fig_sc.add_vline(x=60, line_dash="dot", line_color="rgba(232,228,220,0.15)", line_width=0.75)
 
         for seg in SEG_ORDER:
             sd = samp[samp["segment"] == seg]
@@ -502,7 +566,7 @@ with tab_dash:
                 x=sd["demand_j"], y=sd["gap_j"],
                 mode="markers", name=seg,
                 marker=dict(color=SEG_COLORS[seg], size=6, opacity=0.5,
-                            line=dict(width=0.3, color="white")),
+                            line=dict(width=0.3, color="rgba(232,228,220,0.15)")),
                 customdata=sd[["city","property_type","current_price",
                                "recommended_price","days_on_market"]].values,
                 hovertemplate=(
@@ -520,14 +584,10 @@ with tab_dash:
         st.plotly_chart(fig_sc, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 2.</b> Scatter plot of price deviation from model estimate (y-axis) against
-          the neighborhood demand index (x-axis) for a random subsample of 400 listings.
-          Horizontal dashed lines mark the five-percent mispricing thresholds.
-          Quadrant shading identifies four pricing regimes: high-demand underpriced (upper right,
-          green); high-demand overpriced (lower right, amber); low-demand underpriced (upper left,
-          blue); low-demand overpriced (lower left, red). Dot size is proportional to unit square footage.
-          Currently {hd_op:,} listings occupy the high-demand overpriced quadrant and
-          {ld_up:,} occupy the low-demand underpriced quadrant.
+          <b>Figure 2.</b> Price deviation vs. demand index for 400 sampled listings.
+          Dashed lines mark the five-percent thresholds. Currently {hd_op:,} listings
+          occupy the high-demand overpriced quadrant and {ld_up:,} the low-demand
+          underpriced quadrant.
         </div>""", unsafe_allow_html=True)
 
     with col_city:
@@ -541,31 +601,31 @@ with tab_dash:
 
         fig_city = go.Figure()
         fig_city.add_trace(go.Bar(y=city_s.index, x=city_s["pct_over"],
-            name="Above threshold", orientation="h", marker_color="#c47a7a"))
+            name="Above threshold", orientation="h", marker_color="#c97a6a"))
         fig_city.add_trace(go.Bar(y=city_s.index, x=city_s["pct_under"],
-            name="Below threshold", orientation="h", marker_color="#6a9e6a"))
+            name="Below threshold", orientation="h", marker_color="#6aacad"))
         fig_city.update_layout(**BASE, height=300, barmode="group",
             xaxis=dict(**ax("Share of listings (%)")),
-            yaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            yaxis=dict(showgrid=False,
+                       tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_city, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 3.</b> Share of listings exceeding the five-percent mispricing threshold
-          in each direction, by metropolitan market.
-          {worst} exhibits the highest rate of above-threshold pricing.
-          {best} exhibits the highest rate of below-threshold pricing.
+          <b>Figure 3.</b> Mispricing share by metropolitan market.
+          {worst} exhibits the highest above-threshold rate;
+          {best} the highest below-threshold rate.
         </div>""", unsafe_allow_html=True)
 
     # ── ROI explorer ───────────────────────────────────────────────────────
-    st.markdown('<div class="sec-header">4. Revenue impact under partial adoption scenarios</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">4 &nbsp;·&nbsp; Revenue impact under partial adoption</div>', unsafe_allow_html=True)
 
     ec1, ec2, ec3 = st.columns(3)
     with ec1: sel_city = st.selectbox("Market", ["All"] + sorted(df["city"].unique()))
-    with ec2: sel_type = st.selectbox("Property type", ["All","Studio","1BR","2BR","3BR+"])
+    with ec2: sel_type = st.selectbox("Property type ", ["All","Studio","1BR","2BR","3BR+"])
     with ec3: adopt = st.slider("Adoption rate (%)", 10, 100, 60, 5,
-                                 help="Proportion of eligible property managers who implement the model recommendation.")
+                                 help="Proportion of eligible managers implementing the recommendation.")
 
     roi_df = df.copy()
     if sel_city != "All": roi_df = roi_df[roi_df["city"] == sel_city]
@@ -591,8 +651,7 @@ with tab_dash:
         lift_seg = roi_df.groupby("segment", observed=True)["annual_revenue_lift"].sum().reindex(SEG_ORDER)
         valid    = lift_seg.dropna()
 
-        # Diverging color: positive = blue, negative = muted red
-        bar_colors = [SEG_COLORS[s] if valid[s] >= 0 else "#b94040" for s in valid.index]
+        bar_colors = [SEG_COLORS[s] if valid[s] >= 0 else "#c97a6a" for s in valid.index]
         bar_text   = [
             f"+${v/1e3:.0f}K" if v >= 0 and abs(v) < 1e6
             else f"+${v/1e6:.2f}M" if v >= 0
@@ -603,49 +662,33 @@ with tab_dash:
 
         fig_roi = go.Figure()
         fig_roi.add_trace(go.Bar(
-            x=valid.index,
-            y=valid.values / 1e3,
-            marker_color=bar_colors,
-            marker_line_width=0,
-            text=bar_text,
-            textposition="outside",
-            textfont=dict(size=12, color="#333333"),
+            x=valid.index, y=valid.values / 1e3,
+            marker_color=bar_colors, marker_line_width=0,
+            text=bar_text, textposition="outside",
+            textfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
         ))
-        # Prominent zero line
-        fig_roi.add_hline(y=0, line_color="#444444", line_width=1.2)
+        fig_roi.add_hline(y=0, line_color="rgba(232,228,220,0.25)", line_width=1.0)
 
         y_max = max(abs(valid.values / 1e3).max() * 1.25, 50)
         fig_roi.update_layout(**BASE, height=280, showlegend=False,
-            yaxis={
-                **ax("Projected annual revenue lift (USD, thousands)"),
-                "zeroline": False,
-                "range": [-y_max, y_max],
-            },
-            xaxis=dict(showgrid=False, tickfont=dict(size=12, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            yaxis={**ax("Projected annual revenue lift (USD thousands)"),
+                   "zeroline": False, "range": [-y_max, y_max]},
+            xaxis=dict(showgrid=False,
+                       tickfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_roi, use_container_width=True)
 
     lift_fmt = f"${proj_lift/1e6:.2f}M" if abs(proj_lift) >= 1e6 else f"${proj_lift/1e3:,.0f}K"
     avg_fmt  = f"${avg_lift:,.0f}"
     st.markdown(f"""<div class="fig-caption">
-      <b>Figure 4.</b> Projected annual revenue lift by market segment under a {adopt}% adoption
-      scenario for {city_str} ({type_str}).
-      Bars extending above zero (blue) indicate segments with net positive revenue impact under
-      the repricing scenario; bars below zero (red) indicate segments where current prices are
-      sufficiently above model estimates that corrective repricing would reduce revenue in aggregate,
-      primarily because overpriced units must reduce their asking rent to recover occupancy.
-      Of {len(roi_df):,} listings in scope, {len(eligible):,} have a positive projected lift.
-      At the specified adoption rate, {n_adopt:,} listings would reprice, generating an estimated
-      {lift_fmt} in incremental annual revenue
-      (mean {avg_fmt} per listing per year).
-      The adoption rate parameter captures realistic implementation friction:
-      property managers may face lease constraints, competitive considerations,
-      or information asymmetries that delay full adoption.
+      <b>Figure 4.</b> Projected revenue lift by segment at {adopt}% adoption for {city_str}
+      ({type_str}). Of {len(roi_df):,} listings, {n_adopt:,} would reprice, generating an
+      estimated {lift_fmt} incremental annually (mean {avg_fmt} per listing).
     </div>""", unsafe_allow_html=True)
 
     # ── Listing-level detail ───────────────────────────────────────────────
-    st.markdown('<div class="sec-header">5. Listing-level pricing detail</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">5 &nbsp;·&nbsp; Listing-level pricing detail</div>', unsafe_allow_html=True)
 
     top_thresh = df["annual_revenue_lift"].quantile(0.9)
 
@@ -680,32 +723,27 @@ with tab_dash:
 
     st.dataframe(disp, use_container_width=True, height=340, hide_index=True,
         column_config={
-            "Current rent ($)":  st.column_config.NumberColumn(format="$%d"),
-            "Model estimate ($)":st.column_config.NumberColumn(format="$%d"),
-            "Deviation (%)":     st.column_config.NumberColumn(format="%.1f%%"),
-            "Annual lift ($)":   st.column_config.NumberColumn(format="$%d"),
-            "Demand index":      st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
+            "Current rent ($)":   st.column_config.NumberColumn(format="$%d"),
+            "Model estimate ($)": st.column_config.NumberColumn(format="$%d"),
+            "Deviation (%)":      st.column_config.NumberColumn(format="%.1f%%"),
+            "Annual lift ($)":    st.column_config.NumberColumn(format="$%d"),
+            "Demand index":       st.column_config.ProgressColumn(min_value=0, max_value=100, format="%.0f"),
         },
     )
 
     st.markdown(f"""<div class="fig-caption">
-      <b>Table 2.</b> Listing-level detail for the top 200 records sorted by the selected criterion
-      (displaying {min(200, len(df))} of {len(df):,} listings).
-      DOM denotes days on market, a leading indicator of overpricing: listings vacant for
-      30 or more days are disproportionately represented in the above-threshold overpriced population.
-      The 90th percentile of projected annual revenue lift in the current filtered sample
-      is ${top_thresh:,.0f}, indicating that the top decile of repricing opportunities
-      each represent more than ${top_thresh:,.0f} in annual incremental revenue.
+      <b>Table 2.</b> Listing-level detail, top 200 records by selected criterion
+      ({min(200, len(df))} of {len(df):,} listings shown). DOM = days on market.
+      The 90th percentile of projected annual lift in the current sample is ${top_thresh:,.0f}.
     </div>""", unsafe_allow_html=True)
 
     st.markdown(f"""<div class="paper-footer">
       Model: GradientBoostingRegressor (300 estimators, max depth 4, learning rate 0.06, subsample 0.80).
-      Features: square footage, neighborhood demand index, distance to city center, metropolitan market, property type.
-      Evaluation: 5-fold cross-validation. CV R\u00b2 = {ma['r2_mean']:.3f} (SD = {ma['r2_std']:.3f}).
-      CV MAE = ${ma['mae_mean']:.0f}/month (SD = ${ma['mae_std']:.0f}).
-      Ridge baseline CV R\u00b2 = {ma['baseline_r2_mean']:.3f}.
-      Data: synthetic dataset, N = 2,000 residential listings, five U.S. metropolitan markets.
-      Revenue lift estimates assume partial occupancy adjustment proportional to price elasticity.
+      Features: square footage, neighborhood demand index, distance to city center, market, property type.
+      Evaluation: 5-fold CV. CV R\u00b2\u202f=\u202f{ma['r2_mean']:.3f} (SD {ma['r2_std']:.3f}).
+      CV MAE\u202f=\u202f${ma['mae_mean']:.0f}/month (SD ${ma['mae_std']:.0f}).
+      Ridge baseline CV R\u00b2\u202f=\u202f{ma['baseline_r2_mean']:.3f}.
+      Data: synthetic, N\u202f=\u202f2,000 listings, five U.S. markets.
     </div>""", unsafe_allow_html=True)
 
 
@@ -714,17 +752,16 @@ with tab_dash:
 # ══════════════════════════════════════════════════════════════════════════
 with tab_model:
 
-    st.markdown('<div class="sec-header">6. Model specification and evaluation</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">6 &nbsp;·&nbsp; Model specification and evaluation</div>', unsafe_allow_html=True)
 
-    st.markdown(f"""<div class="abstract-text" style="margin-bottom:1.5rem;">
-      The pricing model is a Gradient Boosting Regressor estimated on five observable
-      listing-level features. Comparable transaction price is deliberately excluded from the
-      feature set: including an oracle comparable would inflate apparent model performance while
-      offering little operational insight, since the goal is to estimate market-clearing rent
-      from characteristics observable at the time of listing. The model is evaluated using
-      five-fold cross-validation; all metrics reported below reflect out-of-fold performance
-      on held-out data. The GBM specification is compared against a regularized linear baseline
-      (Ridge, alpha = 10.0) to quantify the contribution of non-linear feature interactions.
+    st.markdown(f"""<div class="abstract-text" style="margin-bottom:1.5rem;color:#a09b90;">
+      A Gradient Boosting Regressor estimated on five observable listing-level features.
+      Comparable transaction price is excluded from the feature set: including an oracle
+      comparable would inflate apparent performance while offering little operational insight,
+      since the goal is to estimate market-clearing rent from characteristics observable at
+      the time of listing. All metrics below reflect out-of-fold cross-validated performance.
+      The GBM is compared against a regularized linear baseline (Ridge, alpha\u202f=\u202f10.0)
+      to quantify the contribution of non-linear feature interactions.
     </div>""", unsafe_allow_html=True)
 
     m1, m2, m3, m4, m5 = st.columns(5)
@@ -732,19 +769,19 @@ with tab_model:
         st.markdown(f"""<div class="model-kpi">
           <div class="model-kpi-label">CV R&sup2;</div>
           <div class="model-kpi-value model-kpi-good">{ma['r2_mean']:.3f}</div>
-          <div class="model-kpi-sub">SD {ma['r2_std']:.4f} across folds</div>
+          <div class="model-kpi-sub">SD {ma['r2_std']:.4f}</div>
         </div>""", unsafe_allow_html=True)
     with m2:
         st.markdown(f"""<div class="model-kpi">
           <div class="model-kpi-label">CV MAE</div>
           <div class="model-kpi-value">${ma['mae_mean']:.0f}</div>
-          <div class="model-kpi-sub">SD ${ma['mae_std']:.0f} per month</div>
+          <div class="model-kpi-sub">SD ${ma['mae_std']:.0f}/mo</div>
         </div>""", unsafe_allow_html=True)
     with m3:
         st.markdown(f"""<div class="model-kpi">
           <div class="model-kpi-label">CV RMSE</div>
           <div class="model-kpi-value">${ma['rmse_mean']:.0f}</div>
-          <div class="model-kpi-sub">SD ${ma['rmse_std']:.0f} per month</div>
+          <div class="model-kpi-sub">SD ${ma['rmse_std']:.0f}/mo</div>
         </div>""", unsafe_allow_html=True)
     with m4:
         st.markdown(f"""<div class="model-kpi">
@@ -755,7 +792,7 @@ with tab_model:
     with m5:
         mae_pct = ma['mae_mean'] / df_full['recommended_price'].mean() * 100
         st.markdown(f"""<div class="model-kpi">
-          <div class="model-kpi-label">MAPE (mean rent basis)</div>
+          <div class="model-kpi-label">MAPE</div>
           <div class="model-kpi-value model-kpi-good">{mae_pct:.1f}%</div>
           <div class="model-kpi-sub">mean rent ${df_full['recommended_price'].mean():,.0f}</div>
         </div>""", unsafe_allow_html=True)
@@ -763,20 +800,18 @@ with tab_model:
     st.markdown("")
 
     # ── Feature importance + CV stability ─────────────────────────────────
-    st.markdown('<div class="sec-header">7. Feature importance and cross-validation stability</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">7 &nbsp;·&nbsp; Feature importance and cross-validation stability</div>', unsafe_allow_html=True)
 
     fi_col, cv_col = st.columns([3, 2])
     with fi_col:
         imp    = ma["imp_df"]
-        colors = ["#b8cfe0" if i < len(imp)-1 else "#1a4f82" for i in range(len(imp))]
-        # Pre-format labels as plain strings to prevent any renderer splitting decimals
+        colors = ["rgba(200,185,122,0.4)" if i < len(imp)-1 else "#c8b97a" for i in range(len(imp))]
         imp_labels = [f"{v*100:.1f}%" for v in imp["Importance"]]
         fig_imp = go.Figure(go.Bar(
             x=imp["Importance"], y=imp["Feature"], orientation="h",
             marker_color=colors,
-            text=imp_labels,
-            textposition="outside",
-            textfont=dict(size=11, color="#333333", family="Inter, Arial, sans-serif"),
+            text=imp_labels, textposition="outside",
+            textfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
             cliponaxis=False,
         ))
         fig_imp.update_layout(
@@ -785,68 +820,59 @@ with tab_model:
             xaxis=dict(**ax("Relative importance", grid=False),
                        tickformat=".0%",
                        range=[0, imp["Importance"].max() * 1.35]),
-            yaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            yaxis=dict(showgrid=False,
+                       tickfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
             showlegend=False,
         )
         st.plotly_chart(fig_imp, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 5.</b> Relative feature importance from the fitted Gradient Boosting model,
-          computed as the mean reduction in squared error attributable to each feature across
-          all decision trees. Square footage accounts for the largest share of predictive variance
-          ({imp.iloc[-1]['Importance']*100:.1f}%), followed by metropolitan market
-          ({imp.iloc[-2]['Importance']*100:.1f}%).
-          Demand index, distance, and property type collectively account for the remainder.
-          The dominance of structural characteristics (size, location) over demand signals is
-          consistent with standard hedonic pricing theory.
-          Note that the low importance of the neighborhood demand index ({imp.iloc[0]['Importance']*100:.1f}%)
-          reflects a property of the synthetic data generating process, in which demand is a
-          second-order price determinant. In production data, where demand signals are measured
-          with greater granularity and temporal resolution, this feature would be expected to
-          carry materially greater predictive weight.
+          <b>Figure 5.</b> Relative feature importance from the fitted GBM (mean reduction in
+          squared error per feature). Square footage accounts for {imp.iloc[-1]['Importance']*100:.1f}%
+          of predictive variance; metropolitan market {imp.iloc[-2]['Importance']*100:.1f}%.
+          The relatively low importance of the demand index ({imp.iloc[0]['Importance']*100:.1f}%)
+          reflects the synthetic data generating process; in production data with higher-resolution
+          demand signals this feature would carry greater weight.
         </div>""", unsafe_allow_html=True)
 
     with cv_col:
         cv_df = ma["cv_df"]
         fig_cv = go.Figure(go.Bar(
             x=cv_df["Fold"], y=cv_df["R\u00b2"],
-            marker_color="#3d7ab5",
+            marker_color="#c8b97a",
             text=[f"{v:.4f}" for v in cv_df["R\u00b2"]],
-            textposition="inside", textfont=dict(size=10, color="white"),
+            textposition="inside",
+            textfont=dict(size=10, color="#111110", family="IBM Plex Mono, monospace"),
         ))
         fig_cv.add_hline(y=ma["r2_mean"], line_dash="dash",
-                         line_color="#1a4f82", line_width=1.2)
-        # Place mean label above Fold 1 (left side) — never collides with any bar
+                         line_color="rgba(200,185,122,0.5)", line_width=1.2)
         fig_cv.add_trace(go.Scatter(
-            x=["Fold 1"],
-            y=[ma["r2_mean"] + 0.0007],
+            x=["Fold 1"], y=[ma["r2_mean"] + 0.0007],
             mode="text",
             text=[f"Mean\u202f=\u202f{ma['r2_mean']:.4f}"],
             textposition="top right",
-            textfont=dict(size=10, color="#1a4f82", family="Inter, Arial, sans-serif"),
+            textfont=dict(size=10, color="#c8b97a", family="IBM Plex Mono, monospace"),
             showlegend=False,
         ))
         r2_vals = cv_df["R\u00b2"].values
-        r2_lo   = min(r2_vals) - 0.006
-        r2_hi   = max(r2_vals) + 0.010
         fig_cv.update_layout(**BASE, height=300,
-            yaxis=dict(**ax("R\u00b2"), range=[r2_lo, r2_hi]),
-            xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            yaxis=dict(**ax("R\u00b2"), range=[min(r2_vals)-0.006, max(r2_vals)+0.010]),
+            xaxis=dict(showgrid=False,
+                       tickfont=dict(size=10, color="#6b6660", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
             showlegend=False,
         )
         st.plotly_chart(fig_cv, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 6.</b> Cross-validated R\u00b2 across the five held-out folds.
-          Low variance across folds (SD = {ma['r2_std']:.4f}) indicates that model
-          performance generalizes stably across different subsets of the data and is
-          not driven by overfitting to any particular partition.
+          <b>Figure 6.</b> Cross-validated R\u00b2 per fold.
+          Low variance (SD\u202f=\u202f{ma['r2_std']:.4f}) indicates stable generalization
+          across data partitions.
         </div>""", unsafe_allow_html=True)
 
     # ── Predicted vs actual + residual distribution ────────────────────────
-    st.markdown('<div class="sec-header">8. Prediction accuracy and residual diagnostics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">8 &nbsp;·&nbsp; Prediction accuracy and residual diagnostics</div>', unsafe_allow_html=True)
 
     pa_col, res_col = st.columns(2)
     with pa_col:
@@ -858,8 +884,8 @@ with tab_model:
         fig_pa = go.Figure()
         fig_pa.add_trace(go.Scatter(
             x=[p_min, p_max], y=[p_min, p_max],
-            mode="lines", line=dict(color="#aaaaaa", width=1.2, dash="dash"),
-            name="45-degree line", showlegend=True,
+            mode="lines", line=dict(color="rgba(232,228,220,0.15)", width=1.2, dash="dash"),
+            name="45° line", showlegend=True,
         ))
         for seg in SEG_ORDER:
             sd = samp_pred[samp_pred["segment"] == seg]
@@ -868,7 +894,7 @@ with tab_model:
                 x=sd["recommended_price"], y=sd["predicted_price"],
                 mode="markers", name=seg,
                 marker=dict(color=SEG_COLORS[seg], size=5, opacity=0.45,
-                            line=dict(width=0.3, color="white")),
+                            line=dict(width=0.3, color="rgba(232,228,220,0.1)")),
                 hovertemplate="Actual: $%{x:,}<br>Predicted: $%{y:,}<extra></extra>",
             ))
         fig_pa.update_layout(**BASE, height=360,
@@ -877,19 +903,18 @@ with tab_model:
             annotations=[dict(
                 x=0.05, y=0.95, xref="paper", yref="paper",
                 text=f"R\u00b2 = {ma['insample_r2']:.4f}   MAE = ${ma['insample_mae']:.0f}",
-                showarrow=False, font=dict(size=11, color="#333333", family="Inter, Arial"),
-                bgcolor="rgba(255,255,255,0.9)", bordercolor="#dddddd", borderwidth=1,
+                showarrow=False,
+                font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+                bgcolor="rgba(25,25,23,0.9)",
+                bordercolor="rgba(232,228,220,0.12)", borderwidth=1,
             )],
         )
         st.plotly_chart(fig_pa, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 7.</b> Predicted versus actual rent for a random subsample (N = 600).
-          Observations along the 45-degree reference line represent exact predictions.
-          The tight clustering around this line (R\u00b2 = {ma['insample_r2']:.4f},
-          MAE = ${ma['insample_mae']:.0f}) indicates strong in-sample fit.
-          Note that in-sample metrics are expected to slightly exceed cross-validated metrics
-          reported in Section 6.
+          <b>Figure 7.</b> Predicted vs. actual rent (N\u202f=\u202f600 subsample).
+          In-sample R\u00b2\u202f=\u202f{ma['insample_r2']:.4f}, MAE\u202f=\u202f${ma['insample_mae']:.0f}.
+          In-sample metrics slightly exceed CV metrics as expected.
         </div>""", unsafe_allow_html=True)
 
     with res_col:
@@ -897,17 +922,19 @@ with tab_model:
         fig_res = go.Figure()
         fig_res.add_trace(go.Histogram(
             x=residuals, nbinsx=40,
-            marker_color="#3d7ab5", opacity=0.72,
-            name="Residuals",
+            marker_color="#c8b97a", opacity=0.65, name="Residuals",
         ))
-        fig_res.add_vline(x=0, line_color="#555555", line_width=1.2,
+        fig_res.add_vline(x=0, line_color="rgba(232,228,220,0.3)", line_width=1.2,
                           annotation_text="Zero",
                           annotation_position="top right",
-                          annotation_font=dict(size=10, color="#555555"))
-        fig_res.add_vline(x=residuals.mean(), line_dash="dash", line_color="#b94040", line_width=1.2,
+                          annotation_font=dict(size=9, color="#6b6660",
+                                               family="IBM Plex Mono, monospace"))
+        fig_res.add_vline(x=residuals.mean(), line_dash="dash",
+                          line_color="#c97a6a", line_width=1.2,
                           annotation_text=f"Mean = ${residuals.mean():.1f}",
                           annotation_position="top left",
-                          annotation_font=dict(size=10, color="#b94040"))
+                          annotation_font=dict(size=9, color="#c97a6a",
+                                               family="IBM Plex Mono, monospace"))
         fig_res.update_layout(**BASE, height=360,
             xaxis=dict(**ax("Residual (actual minus predicted, USD)")),
             yaxis=dict(**ax("Frequency")),
@@ -915,24 +942,23 @@ with tab_model:
             annotations=[dict(
                 x=0.97, y=0.95, xref="paper", yref="paper",
                 text=f"Mean: ${residuals.mean():.1f}   SD: ${residuals.std():.0f}",
-                showarrow=False, font=dict(size=11, color="#333333", family="Inter, Arial"),
-                bgcolor="rgba(255,255,255,0.9)", bordercolor="#dddddd", borderwidth=1,
+                showarrow=False,
+                font=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
+                bgcolor="rgba(25,25,23,0.9)",
+                bordercolor="rgba(232,228,220,0.12)", borderwidth=1,
                 xanchor="right",
             )],
         )
         st.plotly_chart(fig_res, use_container_width=True)
 
         st.markdown(f"""<div class="fig-caption">
-          <b>Figure 8.</b> Distribution of in-sample residuals.
-          The distribution is approximately symmetric and centered near zero
-          (mean = ${residuals.mean():.1f}, SD = ${residuals.std():.0f}),
+          <b>Figure 8.</b> Residual distribution. Approximately symmetric and centered near zero
+          (mean\u202f=\u202f${residuals.mean():.1f}, SD\u202f=\u202f${residuals.std():.0f}),
           consistent with an unbiased estimator.
-          Absence of systematic skew indicates that the model does not
-          differentially over- or under-predict across the rent distribution.
         </div>""", unsafe_allow_html=True)
 
     # ── MAE by segment + homoscedasticity ──────────────────────────────────
-    st.markdown('<div class="sec-header">9. Error decomposition by segment and price level</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-header">9 &nbsp;·&nbsp; Error decomposition by segment and price level</div>', unsafe_allow_html=True)
 
     seg_col, hetero_col = st.columns(2)
     with seg_col:
@@ -947,12 +973,14 @@ with tab_model:
             x=seg_err.index, y=seg_err["mae"],
             marker_color=[SEG_COLORS[s] for s in seg_err.index],
             text=[f"${v:.0f}" for v in seg_err["mae"]],
-            textposition="outside", textfont=dict(size=11, color="#333333"),
+            textposition="outside",
+            textfont=dict(size=10, color="#a09b90", family="IBM Plex Mono, monospace"),
         ))
         fig_seg.update_layout(**BASE, height=280, showlegend=False,
             yaxis=dict(**ax("Mean absolute error (USD)")),
-            xaxis=dict(showgrid=False, tickfont=dict(size=11, color="#444444"),
-                       linecolor="#dddddd", linewidth=1, showline=True),
+            xaxis=dict(showgrid=False,
+                       tickfont=dict(size=11, color="#a09b90", family="IBM Plex Mono, monospace"),
+                       linecolor="rgba(232,228,220,0.12)", linewidth=1, showline=True),
         )
         st.plotly_chart(fig_seg, use_container_width=True)
 
@@ -964,10 +992,8 @@ with tab_model:
         st.dataframe(tbl, use_container_width=True)
 
         st.markdown("""<div class="fig-caption">
-          <b>Figure 9 and Table 3.</b> Mean absolute error by market segment.
-          Absolute error increases with rent level across segments, as expected for a
-          proportionally calibrated model. MAPE (mean absolute percentage error) is more
-          stable across segments and serves as the primary comparability metric.
+          <b>Figure 9 and Table 3.</b> MAE by segment. Absolute error scales with rent level;
+          MAPE is more stable across segments and is the primary comparability metric.
         </div>""", unsafe_allow_html=True)
 
     with hetero_col:
@@ -976,11 +1002,11 @@ with tab_model:
         fig_het.add_trace(go.Scatter(
             x=samp2["predicted_price"], y=samp2["residual"],
             mode="markers",
-            marker=dict(color="#3d7ab5", size=5, opacity=0.4,
-                        line=dict(width=0.3, color="white")),
+            marker=dict(color="#c8b97a", size=5, opacity=0.35,
+                        line=dict(width=0.3, color="rgba(232,228,220,0.1)")),
             hovertemplate="Predicted: $%{x:,}<br>Residual: $%{y:,}<extra></extra>",
         ))
-        fig_het.add_hline(y=0, line_color="#aaaaaa", line_width=1.0)
+        fig_het.add_hline(y=0, line_color="rgba(232,228,220,0.15)", line_width=1.0)
         fig_het.update_layout(**BASE, height=280,
             xaxis=dict(**ax("Predicted rent (USD)")),
             yaxis=dict(**ax("Residual (USD)")),
@@ -989,14 +1015,12 @@ with tab_model:
         st.plotly_chart(fig_het, use_container_width=True)
 
         st.markdown("""<div class="fig-caption">
-          <b>Figure 10.</b> Residuals plotted against predicted values (homoscedasticity diagnostic).
-          The absence of a funnel pattern or systematic trend indicates that error variance
-          is approximately constant across the range of predicted rent values, satisfying the
-          homoscedasticity assumption. No structural bias is evident at higher price levels.
+          <b>Figure 10.</b> Residuals vs. predicted values. Absence of a funnel pattern
+          indicates approximately constant error variance across the rent distribution.
         </div>""", unsafe_allow_html=True)
 
-    # ── Model notes ────────────────────────────────────────────────────────
-    st.markdown('<div class="sec-header">10. Limitations and production considerations</div>', unsafe_allow_html=True)
+    # ── Notes ────────────────────────────────────────────────────────────
+    st.markdown('<div class="sec-header">10 &nbsp;·&nbsp; Limitations and production considerations</div>', unsafe_allow_html=True)
 
     n1, n2, n3 = st.columns(3)
     with n1:
@@ -1004,40 +1028,34 @@ with tab_model:
         st.markdown(f"""<div class="note-body">
           The gradient boosting specification captures non-linear interactions among city,
           property type, and demand index that are inaccessible to linear models, yielding
-          a {(ma['r2_mean']-ma['baseline_r2_mean'])*100:.1f} percentage-point improvement
-          in cross-validated R\u00b2 over the Ridge baseline.
-          Residuals are well-centered (mean\u202f=\u202f${abs(ma['residuals'].mean()):.0f}) and
-          homoscedastic, indicating an unbiased, well-calibrated estimator across the
-          observed rent distribution.
+          a {(ma['r2_mean']-ma['baseline_r2_mean'])*100:.1f} pp improvement in CV R\u00b2
+          over the Ridge baseline. Residuals are well-centered
+          (mean\u202f=\u202f${abs(ma['residuals'].mean()):.0f}) and homoscedastic.
         </div>""", unsafe_allow_html=True)
     with n2:
         st.markdown('<div class="note-head">Known limitations</div>', unsafe_allow_html=True)
         st.markdown("""<div class="note-body">
-          The model is estimated on synthetic data; out-of-sample performance on real
-          transaction data will depend on comparable quality, vintage, and coverage.
-          Seasonality, macroeconomic cycles, and unit-level amenities (parking, laundry,
-          building quality) are not represented in the feature set.
-          The demand index is treated as a static cross-sectional input; in practice it
-          would be operationalized as a rolling, market-specific signal.
+          Estimated on synthetic data; out-of-sample performance on real transaction data
+          depends on comparable quality and coverage. Seasonality, macroeconomic cycles,
+          and unit-level amenities are not represented. The demand index is treated as a
+          static cross-sectional input rather than a rolling market-specific signal.
         </div>""", unsafe_allow_html=True)
     with n3:
         st.markdown('<div class="note-head">Production implementation</div>', unsafe_allow_html=True)
         st.markdown("""<div class="note-body">
-          A production deployment would retrain on a rolling window of fresh transaction
-          data, with automated monitoring for feature distribution shift in the demand index
-          and square footage distributions. Point estimates would be accompanied by
-          prediction intervals to communicate pricing uncertainty to end users.
-          A staged rollout design would enable causal estimation of occupancy and
-          revenue effects via a randomized controlled experiment.
+          A production deployment would retrain on a rolling transaction window with
+          automated monitoring for feature distribution shift. Point estimates would be
+          accompanied by prediction intervals. A staged rollout design would enable
+          causal estimation of occupancy and revenue effects via randomized experiment.
         </div>""", unsafe_allow_html=True)
 
     st.markdown(f"""<div class="paper-footer">
-      Model specification: GradientBoostingRegressor (n_estimators = 300, max_depth = 4,
-      learning_rate = 0.06, subsample = 0.80, min_samples_leaf = 15, random_state = 42).
-      Baseline: Ridge regression (alpha = 10.0) with StandardScaler preprocessing.
-      Evaluation protocol: stratified 5-fold cross-validation (random_state = 42).
-      Performance: CV R\u00b2 = {ma['r2_mean']:.4f} (SD = {ma['r2_std']:.4f}),
-      CV MAE = ${ma['mae_mean']:.0f}/month (SD = ${ma['mae_std']:.0f}),
-      CV RMSE = ${ma['rmse_mean']:.0f}/month.
-      Data: synthetic, N = 2,000 residential listings, five U.S. metropolitan markets.
+      Model: GradientBoostingRegressor (n_estimators\u202f=\u202f300, max_depth\u202f=\u202f4,
+      learning_rate\u202f=\u202f0.06, subsample\u202f=\u202f0.80, min_samples_leaf\u202f=\u202f15).
+      Baseline: Ridge (alpha\u202f=\u202f10.0) with StandardScaler.
+      Evaluation: stratified 5-fold CV (random_state\u202f=\u202f42).
+      CV R\u00b2\u202f=\u202f{ma['r2_mean']:.4f} (SD {ma['r2_std']:.4f}),
+      CV MAE\u202f=\u202f${ma['mae_mean']:.0f}/month (SD ${ma['mae_std']:.0f}),
+      CV RMSE\u202f=\u202f${ma['rmse_mean']:.0f}/month.
+      Data: synthetic, N\u202f=\u202f2,000 listings, five U.S. markets.
     </div>""", unsafe_allow_html=True)
